@@ -26,16 +26,16 @@ if __name__ == "__main__":
     
     # step1: get info from task.obj in MSCCD task folder
     
-    # taskId      = sys.argv[1]
-    # detectionId = sys.argv[2]
-    # cloneIndex  = sys.argv[3]
-    # keywordsList = sys.argv[4]
+    taskId      = sys.argv[1]
+    detectionId = sys.argv[2]
+    cloneIndex  = sys.argv[3]
+    keywordsList = sys.argv[4]
     
     ### for test
-    taskId      = "11012"
-    detectionId = "1"
-    cloneIndex  = 6187
-    keywordsList = "/Users/syu/workspace/MSCCD/grammarDefinations/cpp/CPP14.reserved"
+    # taskId      = "11012"
+    # detectionId = "1"
+    # cloneIndex  = 6187
+    # keywordsList = "/Users/syu/workspace/MSCCD/grammarDefinations/cpp/CPP14.reserved"
     # "/Users/syu/workspace/MSCCD/grammarDefinations/Java9/Java9.reserved"
     
     workFolder = './' + taskId + "-" + detectionId + "-" + str(cloneIndex) + "/"
