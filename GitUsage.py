@@ -1,10 +1,31 @@
 import os,sys, datetime
+import time
 # git log -L:main:controller.py --no-patch
 
-def getCommitIdListFromHistoryByDateOrder(diffHistoryDict):
+def mergeTwoCommitIdListByDateOrder(commitIdList1, commitIdList2):
+    res = []
+    while len(commitIdList1) > 0 and len(commitIdList2) > 0:
+        if compareDateByStr(commitIdList1[0][2], commitIdList2[0][2]):
+            res.append(commitIdList2[0])
+            commitIdList2.pop(0)
+        else:
+            res.append(commitIdList1[0])
+            commitIdList1.pop(0)
+            
+    if len(commitIdList1) > 0:
+        res.extend(commitIdList1)
+        
+    if len(commitIdList2) > 0:
+        res.extend(commitIdList2)
+    return res
+
+
+ 
+
+def getCommitIdListFromHistoryByDateOrder(diffHistoryDict, segmentId):
     commitIdList = []
     for commitId in diffHistoryDict:
-        commitIdList.append(commitId)
+        commitIdList.append( (commitId, segmentId, diffHistoryDict[commitId]['date']) )
     commitIdList.reverse()
     return commitIdList
 
@@ -23,6 +44,15 @@ def transDiffHistoryToDict(diffHistory):
         elif "    " in line:
             diffHistoryDict[commit]['Content'].append(line.strip())
     return diffHistoryDict
+
+def compareDateByStr(dateStr1, dateStr2):
+    date1 = datetime.datetime.strptime(dateStr1, "%a %b %d %H:%M:%S %Y %z")
+    date2 = datetime.datetime.strptime(dateStr2, "%a %b %d %H:%M:%S %Y %z")
+    
+    if date1 >= date2:
+        return True
+    else:
+        return False
 
 # compare date by given two commit id in the diffHistoryDict and return the newer one
 def compareDateInDiffHistoryDict(diffHistoryDict1, commitId1, diffHistoryDict2, commitId2):
@@ -43,7 +73,8 @@ def getDiffHistory(projPath, filePath, functionName):
     if filePath_relative[0] == "/":
         filePath_relative = filePath_relative[1:]
     
-    cmd = "cd " + projPath + "; git log -L:" + functionName + ":" + filePath_relative + " --no-patch"
+    # cmd = "cd " + projPath + "; git log -L:" + functionName + ":" + filePath_relative + " --no-patch"
+    cmd = "cd " + projPath + "; git log " + filePath_relative
     res = os.popen(cmd).readlines()
     return transDiffHistoryToDict(res)
 
@@ -62,8 +93,9 @@ def copyTargetFileToFolder(projPath, filePath, projName, functionName, commitId,
     targetFolder = os.path.abspath(targetFolder)
     
     cmd = "cd " + projPath + "; git checkout " + commitId + "; cp " + filePath_relative + " " + targetFolder + "/" + commitId + extName
-    os.popen(cmd)
-    
+    #execute the command cmd and wait for the result
+    res = os.popen(cmd).readlines()
+        
     return targetFolder + "/" + commitId + extName
 
 def switchToHeadCommit(projPath):    

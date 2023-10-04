@@ -22,15 +22,15 @@ public class ParserController {
                 return false;
             }
             CharStream input = CharStreams.fromFileName(filePath);
-            Java9Lexer lexer = new Java9Lexer(input);
+            JavaScriptLexer lexer = new JavaScriptLexer(input);
 
             CommonTokenStream tokens = new CommonTokenStream(lexer);
 
             tokens.getNumberOfOnChannelTokens();
 
-            Java9Parser parser = new Java9Parser(tokens);
+            JavaScriptParser parser = new JavaScriptParser(tokens);
 
-            ParseTree tree = parser.compilationUnit();
+            ParseTree tree = parser.program();
             pTree = tree;
             lexicalUnits = tokens.getTokens();
         }catch (Exception e){ 
@@ -69,7 +69,8 @@ public class ParserController {
                 }
                 else if(tokenType == 3){
                     res.addTokenToSequence(tokenText);
-                    String[] splitedToken = tokenText.split(tokenText);
+                    Pattern p = Pattern.compile("\\W+");
+                    String[] splitedToken = p.split(tokenText);
                     for(int i = 0; i < splitedToken.length; i++){
                         res.addToken(splitedToken[i]);
                     }

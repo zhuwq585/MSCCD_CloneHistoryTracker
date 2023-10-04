@@ -69,7 +69,8 @@ public class ParserController {
                 }
                 else if(tokenType == 3){
                     res.addTokenToSequence(tokenText);
-                    String[] splitedToken = tokenText.split(tokenText);
+                    Pattern p = Pattern.compile("\\W+");
+                    String[] splitedToken = p.split(tokenText);
                     for(int i = 0; i < splitedToken.length; i++){
                         res.addToken(splitedToken[i]);
                     }

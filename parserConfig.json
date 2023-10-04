@@ -1,5 +1,5 @@
 {
-    "parser": "grammarDefinations/Java9",
-    "grammarName": "Java9",
-    "startSymbol": "compilationUnit"
+    "parser": "grammarDefinations/javascript",
+    "grammarName": "JavaScript",
+    "startSymbol": "program"
 }
