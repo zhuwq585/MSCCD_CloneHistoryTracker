@@ -22,14 +22,15 @@ public class App
         String keywordsListPath = args[6];
         // String outputFilePath = args[8];
 
-        //ava -jar Calculators/CPP14.jar /Users/syu/workspace/MSCCD_CloneHistoryTracker/11012-1-6187/device-os_crc32/c87611a26d990b10ae396eb2b2ff23b26dda7901.cpp 193 202 /Users/syu/workspace/MSCCD_CloneHistoryTracker/11012-1-6187/domoticz_Crc8_strMQ/e4930cc38788e780d04467c2b3d60b4d81cc3049.cpp 120 128 /Users/syu/workspace/MSCCD/grammarDefinations/cpp/CPP14.reserved
-        // String filePath1 = "/Users/syu/workspace/MSCCD_CloneHistoryTracker/11012-1-6187/device-os_crc32/c87611a26d990b10ae396eb2b2ff23b26dda7901.cpp";
-        // int startLine1 = 193;
-        // int endLine1 = 202;
-        // String filePath2 = "/Users/syu/workspace/MSCCD_CloneHistoryTracker/11012-1-6187/domoticz_Crc8_strMQ/e4930cc38788e780d04467c2b3d60b4d81cc3049.cpp";
-        // int startLine2 = 120;
-        // int endLine2 = 128;
-        // String keywordsListPath = "/Users/syu/workspace/MSCCD/grammarDefinations/cpp/CPP14.reserved";
+        //java -jar Calculators/Java9.jar 11010-1-7391/smarthome_equals/11730b46103ba7899addf6bac7c9bfc1e2d68212.java 118 133 11010-1-7391/freedomotic_equals/952ae0b698cbe625be7f4889d549a6e7152b6b09.java 430 446 ~/workspace/MSCCD/grammarDefinations/Java9/Java9.reserved
+        // String filePath1 = "11010-1-7391/smarthome_equals/11730b46103ba7899addf6bac7c9bfc1e2d68212.java";
+        // int startLine1 = 118;
+        // int endLine1 = 133;
+        // String filePath2 = "11010-1-7391/freedomotic_equals/952ae0b698cbe625be7f4889d549a6e7152b6b09.java";
+        // int startLine2 = 430;
+        // int endLine2 = 446;
+        // String keywordsListPath = "/Users/syu/workspace/MSCCD/grammarDefinations/Java9/Java9.reserved";
+
 
         KeywordsSet k = new KeywordsSet(keywordsListPath);
         ParserController pController = new ParserController();

@@ -1,5 +1,5 @@
 {
-    "parser": "grammarDefinations/javascript",
-    "grammarName": "JavaScript",
-    "startSymbol": "program"
+    "parser": "grammarDefinations/Go",
+    "grammarName": "Go",
+    "startSymbol": "sourceFile"
 }

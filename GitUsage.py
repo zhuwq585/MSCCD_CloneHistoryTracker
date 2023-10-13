@@ -20,29 +20,96 @@ def mergeTwoCommitIdListByDateOrder(commitIdList1, commitIdList2):
     return res
 
 
- 
+def getDefaultBranchName(projPath):
+    cmd = "cd " + projPath + "; git remote show origin"
+    res = os.popen(cmd).readlines()
+    for line in res:
+        if "HEAD branch" in line:
+            return line.split(":")[1].strip()
+    
+    return None
+    
 
-def getCommitIdListFromHistoryByDateOrder(diffHistoryDict, segmentId):
+def ifFileDifferenceInLineRange(diffHistoryObj1, diffHistoryObj2):
+    # file1, startLine1, endLine1, file2, startLine2, endLine2
+    file1      = diffHistoryObj1['pathInCommit']
+    startLine1 = diffHistoryObj1['startLine']
+    endLine1   = diffHistoryObj1['endLine']
+    file2      = diffHistoryObj2['pathInCommit']
+    startLine2 = diffHistoryObj2['startLine']
+    endLine2   = diffHistoryObj2['endLine']
+    
+    # "./diffInRange.sh " + file1 + " " + str(startLine1) + " " + str(endLine1) + " " + file2 + " " + str(startLine2) + " " + str(endLine2)
+    cmd = "./diffInRange.sh " + file1 + " " + str(startLine1) + " " + str(endLine1) + " " + file2 + " " + str(startLine2) + " " + str(endLine2)
+    res = os.popen(cmd).readlines()
+    if len(res) > 0:
+        return True
+    else:
+        return False
+    
+def commitIdListFilterByFileDifferenceInLineRange(commitIdList, diffHistoryDict):
+    res = [] # a queue, left side is the oldest commit id
+    
+    if len(commitIdList) > 1:
+        res.append(commitIdList[0])
+        
+        cursor = 1
+        while cursor < len(commitIdList):
+            commitId = commitIdList[cursor][0]
+            commitId_pre = res[-1][0]
+            if ifFileDifferenceInLineRange(diffHistoryDict[commitId], diffHistoryDict[commitId_pre]):
+                res.append(commitIdList[cursor])
+            cursor += 1
+        
+        return res
+   
+    else:
+        return commitIdList
+
+def getCommitIdListFromHistoryByDateOrder(diffHistoryDict, segmentId): 
     commitIdList = []
     for commitId in diffHistoryDict:
         commitIdList.append( (commitId, segmentId, diffHistoryDict[commitId]['date']) )
     commitIdList.reverse()
-    return commitIdList
+    
+    return commitIdList 
+    # return commitIdListFilterByFileDifferenceInLineRange(commitIdList, diffHistoryDict) # commitIdList[0] is the oldest commit id
+
+# an example that code provided by capilot is buggy
+# def transDiffHistoryToDict(diffHistory):
+#     diffHistoryDict = {}
+#     for line in diffHistory:
+#         if "commit" in line:
+#             commit = line.split(" ")[1].strip()
+#             diffHistoryDict[commit] = {"Content":[]}
+#         elif "Author:" in line:
+#             author = line.split("Author:")[1].strip()
+#             diffHistoryDict[commit]['author'] = author
+#         elif "Date:" in line:
+#             date = line.split("Date:")[1].strip()
+#             diffHistoryDict[commit]['date'] = date
+#         elif "    " in line:
+#             diffHistoryDict[commit]['Content'].append(line.strip())
+#     return diffHistoryDict
 
 def transDiffHistoryToDict(diffHistory):
     diffHistoryDict = {}
     for line in diffHistory:
-        if "commit" in line:
+    
+        headStr = line[:7]
+        
+        if "commit" in headStr:
             commit = line.split(" ")[1].strip()
             diffHistoryDict[commit] = {"Content":[]}
-        elif "Author:" in line:
+        elif "Author:" in headStr:
             author = line.split("Author:")[1].strip()
             diffHistoryDict[commit]['author'] = author
-        elif "Date:" in line:
+        elif "Date:" in headStr:
             date = line.split("Date:")[1].strip()
             diffHistoryDict[commit]['date'] = date
-        elif "    " in line:
+        elif "    " in headStr:
             diffHistoryDict[commit]['Content'].append(line.strip())
+            
     return diffHistoryDict
 
 def compareDateByStr(dateStr1, dateStr2):
@@ -74,7 +141,8 @@ def getDiffHistory(projPath, filePath, functionName):
         filePath_relative = filePath_relative[1:]
     
     # cmd = "cd " + projPath + "; git log -L:" + functionName + ":" + filePath_relative + " --no-patch"
-    cmd = "cd " + projPath + "; git log " + filePath_relative
+    # cmd = "cd " + projPath + "; git log " + filePath_relative
+    cmd = "cd " + projPath + "; git log master " + filePath_relative
     res = os.popen(cmd).readlines()
     return transDiffHistoryToDict(res)
 
@@ -94,14 +162,14 @@ def copyTargetFileToFolder(projPath, filePath, projName, functionName, commitId,
     
     cmd = "cd " + projPath + "; git checkout " + commitId + "; cp " + filePath_relative + " " + targetFolder + "/" + commitId + extName
     #execute the command cmd and wait for the result
-    res = os.popen(cmd).readlines()
+    os.popen(cmd).readlines()
         
     return targetFolder + "/" + commitId + extName
 
-def switchToHeadCommit(projPath):    
+def switchToHeadCommit(projPath, defaultBranchName):    
     # switch the target repository to head commit 
-    cmd = "cd " + projPath + "; git checkout master"
-    res = os.popen(cmd).readlines()
+    cmd = "cd " + projPath + "; git checkout " + defaultBranchName
+    os.popen(cmd).readlines()
     # print(res)
     
     

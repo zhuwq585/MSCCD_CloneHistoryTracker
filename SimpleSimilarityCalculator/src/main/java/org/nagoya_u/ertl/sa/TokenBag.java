@@ -145,7 +145,7 @@ public class TokenBag{
         if (this.tokenNum >= bag2.tokenNum){
             return (double)commonTokens / (double)this.tokenNum;
         }else{
-            return (double)commonTokens / (double)this.tokenNum;
+            return (double)commonTokens / (double)bag2.tokenNum;
         }
     }
   
