@@ -41,11 +41,11 @@ def ifFileDifferenceInLineRange(diffHistoryObj1, diffHistoryObj2):
     
     # "./diffInRange.sh " + file1 + " " + str(startLine1) + " " + str(endLine1) + " " + file2 + " " + str(startLine2) + " " + str(endLine2)
     cmd = "./diffInRange.sh " + file1 + " " + str(startLine1) + " " + str(endLine1) + " " + file2 + " " + str(startLine2) + " " + str(endLine2)
-    res = os.popen(cmd).readlines()
+    res = os.popen(cmd).read()
     if len(res) > 0:
-        return True
+        return res
     else:
-        return False
+        return None
     
 def commitIdListFilterByFileDifferenceInLineRange(commitIdList, diffHistoryDict):
     res = [] # a queue, left side is the oldest commit id
@@ -57,8 +57,13 @@ def commitIdListFilterByFileDifferenceInLineRange(commitIdList, diffHistoryDict)
         while cursor < len(commitIdList):
             commitId = commitIdList[cursor][0]
             commitId_pre = res[-1][0]
-            if ifFileDifferenceInLineRange(diffHistoryDict[commitId], diffHistoryDict[commitId_pre]):
+            
+            fileDiffRes = ifFileDifferenceInLineRange(diffHistoryDict[commitId_pre], diffHistoryDict[commitId])
+            if fileDiffRes != None:
+                
                 res.append(commitIdList[cursor])
+                diffHistoryDict[commitId]['diffContent'] = fileDiffRes
+                
             cursor += 1
         
         return res

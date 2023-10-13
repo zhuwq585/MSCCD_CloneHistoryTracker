@@ -26,13 +26,19 @@ if __name__ == "__main__":
     
     # step1: get info from task.obj in MSCCD task folder
     
-    taskId      = sys.argv[1]
-    detectionId = sys.argv[2]
-    cloneIndex  = sys.argv[3]
-    keywordsList = sys.argv[4]
-    language = sys.argv[5]
+    # taskId      = sys.argv[1]
+    # detectionId = sys.argv[2]
+    # cloneIndex  = sys.argv[3]
+    # keywordsList = sys.argv[4]
+    # language = sys.argv[5]
     
-
+    ### for test
+    taskId      = "11011"
+    detectionId = "1"
+    cloneIndex  = 26915
+    keywordsList = "/Users/syu/workspace/MSCCD/grammarDefinations/Java9/Java9.reserved"
+    language = "Java"
+    # "/Users/syu/workspace/MSCCD/grammarDefinations/Java9/Java9.reserved"
     
     workFolder = './reports/' + taskId + "-" + detectionId + "-" + str(cloneIndex) + "/"
     if not os.path.exists(workFolder):
@@ -140,6 +146,7 @@ if __name__ == "__main__":
                     "modifiedCommit" : commitList[1][0],
                     "modifiedCommitContent" : targetPair[commitList[1][1]]['diffHis'][commitList[1][0]],
                     "modifiedProj" : targetPair[commitList[1][1]]['projectName'],
+                    "unmodifiedCommit" : commitList[0][0],
                     "unmodifiedCommitContent" : targetPair[commitList[0][1]]['diffHis'][commitList[0][0]],
                     "similarity" : similarityCalculation(targetPair[commitList[0][1]]['diffHis'][commitList[0][0]]['pathInCommit'], targetPair[commitList[0][1]]['diffHis'][commitList[0][0]]['startLine'], targetPair[commitList[0][1]]['diffHis'][commitList[0][0]]['endLine'], targetPair[commitList[1][1]]['diffHis'][commitList[1][0]]['pathInCommit'], targetPair[commitList[1][1]]['diffHis'][commitList[1][0]]['startLine'], targetPair[commitList[1][1]]['diffHis'][commitList[1][0]]['endLine'], keywordsList, targetPair['language'])
                 })
@@ -162,19 +169,21 @@ if __name__ == "__main__":
                         "modifiedCommit" : commitList[0][0],
                         "modifiedCommitContent" : targetPair[commitList[0][1]]['diffHis'][commitList[0][0]],
                         "modifiedProj" : targetPair[commitList[0][1]]['projectName'],
+                        "unmodifiedCommit" : r[0],
                         "unmodifiedCommitContent" : targetPair[r[1]]['diffHis'][r[0]],
                         "similarity" : similarityCalculation(targetPair[commitList[0][1]]['diffHis'][commitList[0][0]]['pathInCommit'], targetPair[commitList[0][1]]['diffHis'][commitList[0][0]]['startLine'], targetPair[commitList[0][1]]['diffHis'][commitList[0][0]]['endLine'], targetPair[r[1]]['diffHis'][r[0]]['pathInCommit'], targetPair[r[1]]['diffHis'][r[0]]['startLine'], targetPair[r[1]]['diffHis'][r[0]]['endLine'], keywordsList, targetPair['language'])
                     })
                     commitList.pop(0)
                 # generate similarity between r and commitList[1], and set modifiedCommit, modifiedCommitContent and modifiedProj based on commitList[1]
                 else:
-                    print("calculate similarity between " + r[0] + " and " + commitList[1][0])
+                    print("calculate similarity between " + r[0] + " and " + commitList[0][0])
                     similarityList.append({
-                        "modifiedCommit" : commitList[1][0],
-                        "modifiedCommitContent" : targetPair[commitList[1][1]]['diffHis'][commitList[1][0]],
-                        "modifiedProj" : targetPair[commitList[1][1]]['projectName'],
+                        "modifiedCommit" : commitList[0][0],
+                        "modifiedCommitContent" : targetPair[commitList[0][1]]['diffHis'][commitList[0][0]],
+                        "modifiedProj" : targetPair[commitList[0][1]]['projectName'],
+                        "unmodifiedCommit" : r[0],
                         "unmodifiedCommitContent" : targetPair[r[1]]['diffHis'][r[0]],
-                        "similarity" : similarityCalculation(targetPair[r[1]]['diffHis'][r[0]]['pathInCommit'], targetPair[r[1]]['diffHis'][r[0]]['startLine'], targetPair[r[1]]['diffHis'][r[0]]['endLine'], targetPair[commitList[1][1]]['diffHis'][commitList[1][0]]['pathInCommit'], targetPair[commitList[1][1]]['diffHis'][commitList[1][0]]['startLine'], targetPair[commitList[1][1]]['diffHis'][commitList[1][0]]['endLine'], keywordsList, targetPair['language'])
+                        "similarity" : similarityCalculation(targetPair[r[1]]['diffHis'][r[0]]['pathInCommit'], targetPair[r[1]]['diffHis'][r[0]]['startLine'], targetPair[r[1]]['diffHis'][r[0]]['endLine'], targetPair[commitList[0][1]]['diffHis'][commitList[0][0]]['pathInCommit'], targetPair[commitList[0][1]]['diffHis'][commitList[0][0]]['startLine'], targetPair[commitList[0][1]]['diffHis'][commitList[0][0]]['endLine'], keywordsList, targetPair['language'])
                     })
                     commitList.pop(0)                
                 

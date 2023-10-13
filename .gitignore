@@ -1,2 +1,5 @@
 SimpleSimilarityCalculator/src/main/java/org/nagoya_u/ertl/sa/parser/*
 reports/*
+.vscode
+.snapshots
+__pycache__

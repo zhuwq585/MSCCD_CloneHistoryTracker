@@ -1,0 +1,128 @@
+<html>
+    <head>
+        <title></title>
+
+        <link rel="stylesheet" href="../../templete/style.css">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/default.min.css">
+
+    </head>
+    <body>
+        <div id="segmentInfo">
+            <div class="left">
+                <h2>Segment1</h2>
+                <div class="infoPanel">
+                    <div class="infoLine">
+                        <span>Project Name: </span> {{report.segment1.projectName}}
+                    </div>
+                    <div class="infoLine">
+                        <span>File Path:</span> {{report.segment1.filePath}}
+                    </div>
+                    <div class="infoLine">
+                        <span>Function Name:</span> {{report.segment1.functionName}}
+                    </div>
+                    <div class="infoLine">
+                        <span>Default branch:</span> {{report.segment1.defaultBranch}}
+                    </div>
+                </div>
+            </div>
+            <div class="right">
+                <h2>Segment2</h2>
+                <div class="infoPanel">
+                    <div class="infoLine">
+                        <span>Project Name: </span> {{report.segment2.projectName}}
+                    </div>
+                    <div class="infoLine">
+                        <span>File Path:</span> {{report.segment2.filePath}}
+                    </div>
+                    <div class="infoLine">
+                        <span>Function Name:</span> {{report.segment2.functionName}}
+                    </div>
+                    <div class="infoLine">
+                        <span>Default branch:</span> {{report.segment2.defaultBranch}}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="main">
+            {% for simiItem in report.simiItems %}
+
+            {% if simiItem.diffIndex != 0 %}
+            <div class="diff">
+                <div class="left">
+                    {% if simiItem.diffIndex == 1 %}
+                    <pre><code>{{simiItem.diffContent}}</code></pre>
+                    {% endif %}
+                </div>
+                <div class="right">
+                    {% if simiItem.diffIndex == 2 %}
+                    <pre><code>{{simiItem.diffContent}}</code></pre>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+            <div class="simiItem">
+                <div class="similarity">
+                    <span>Overlap Similarity:  {{simiItem.oSimi}}</span>
+                    <span>LCS Similarity:  {{simiItem.lSimi}}</span>
+                </div>
+                <div class="left">
+                    <div class="infoPanel">
+                        <div class="infoLine">
+                            <span>Commit Id: </span> {{simiItem.segment1.commitId}}
+                        </div>
+                        <div class="infoLine">
+                            <span>Date: </span> {{simiItem.segment1.date}}
+                        </div>
+                        <div class="infoLine">
+                            <span>Position: </span> {{simiItem.segment1.position}}
+                        </div>
+                        <div class="infoLine">
+                            <span>Author: </span> {{simiItem.segment1.author}}
+                        </div>
+                    </div>
+                    <div class="code">
+                        <pre>
+                            <code>
+                            {{simiItem.segment1.code}}}
+                            </code>
+                        </pre>
+                    </div>
+                </div>
+                <div class="right">
+                    <div class="infoPanel">
+                        <div class="infoLine">
+                            <span>Commit Id: </span> {{simiItem.segment2.commitId}}
+                        </div>
+                        <div class="infoLine">
+                            <span>Date: </span> {{simiItem.segment2.date}}
+                        </div>
+                        <div class="infoLine">
+                            <span>Position: </span> {{simiItem.segment2.position}}
+                        </div>
+                        <div class="infoLine">
+                            <span>Author: </span> {{simiItem.segment2.author}}
+                        </div>
+                    </div>
+                    <div class="code">
+                        <pre>
+                            <code>
+                            {{simiItem.segment2.code}}
+                            </code>
+                        </pre>
+                    </div>
+                </div>
+
+            </div>
+            {% endfor %}
+        </div>
+    </body>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+
+<!-- and it's easy to individually load additional languages -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/languages/go.min.js"></script>
+<script>
+    hljs.highlightAll();</script>
+
+</html>
