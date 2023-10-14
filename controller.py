@@ -19,7 +19,16 @@ def similarityCalculation(filePath1, startLine1, endLine1, filePath2, startLine2
     else:
         return None, None
     
-    
+def generateSimilarityCalItem(olderCommitItem, newerCommitItem):
+    res = {
+        "newCommit" : newerCommitItem[0],
+        "newCommitContent" : targetPair[newerCommitItem[1]]['diffHis'][newerCommitItem[0]],
+        "newProj" : targetPair[newerCommitItem[1]]['projectName'],
+        "oldCommit" : olderCommitItem[0],
+        "oldCommitContent" : targetPair[olderCommitItem[1]]['diffHis'][olderCommitItem[0]],
+        "similarity" : similarityCalculation(targetPair[olderCommitItem[1]]['diffHis'][olderCommitItem[0]]['pathInCommit'], targetPair[olderCommitItem[1]]['diffHis'][olderCommitItem[0]]['startLine'], targetPair[olderCommitItem[1]]['diffHis'][olderCommitItem[0]]['endLine'], targetPair[newerCommitItem[1]]['diffHis'][newerCommitItem[0]]['pathInCommit'], targetPair[newerCommitItem[1]]['diffHis'][newerCommitItem[0]]['startLine'], targetPair[newerCommitItem[1]]['diffHis'][newerCommitItem[0]]['endLine'], keywordsList, targetPair['language'])
+    }   
+    return res
 
 
 if __name__ == "__main__":
@@ -37,7 +46,7 @@ if __name__ == "__main__":
     detectionId = "1"
     cloneIndex  = 26915
     keywordsList = "/Users/syu/workspace/MSCCD/grammarDefinations/Java9/Java9.reserved"
-    language = "Java"
+    language = "Java" #{"Java", "Go", "C","JavaScript","C++"}
     # "/Users/syu/workspace/MSCCD/grammarDefinations/Java9/Java9.reserved"
     
     workFolder = './reports/' + taskId + "-" + detectionId + "-" + str(cloneIndex) + "/"
@@ -133,62 +142,38 @@ if __name__ == "__main__":
     
     if len(commitList1) <= 1 and len(commitList2) <= 1:
         print("No modification in both segments")
+        similarityList.append(generateSimilarityCalItem(commitList1[0], commitList2[0]))
+        
     else:
         commitList  = mergeTwoCommitIdListByDateOrder(commitList1, commitList2)
         
-        r = None
-        
-        while len(commitList) >= 2:
-            if commitList[0][1] != commitList[1][1]: # if the two commits are from different segment 
-                print("calculate similarity between " + commitList[0][0] + " and " + commitList[1][0])
-                # generate similarity between commitList[0] and commitList[1], and set modifiedCommit, modifiedCommitContent and modifiedProj based on commitList[1]
-                similarityList.append({
-                    "modifiedCommit" : commitList[1][0],
-                    "modifiedCommitContent" : targetPair[commitList[1][1]]['diffHis'][commitList[1][0]],
-                    "modifiedProj" : targetPair[commitList[1][1]]['projectName'],
-                    "unmodifiedCommit" : commitList[0][0],
-                    "unmodifiedCommitContent" : targetPair[commitList[0][1]]['diffHis'][commitList[0][0]],
-                    "similarity" : similarityCalculation(targetPair[commitList[0][1]]['diffHis'][commitList[0][0]]['pathInCommit'], targetPair[commitList[0][1]]['diffHis'][commitList[0][0]]['startLine'], targetPair[commitList[0][1]]['diffHis'][commitList[0][0]]['endLine'], targetPair[commitList[1][1]]['diffHis'][commitList[1][0]]['pathInCommit'], targetPair[commitList[1][1]]['diffHis'][commitList[1][0]]['startLine'], targetPair[commitList[1][1]]['diffHis'][commitList[1][0]]['endLine'], keywordsList, targetPair['language'])
-                })
-                r = commitList.pop(0)
-                
-            else:
-                if r == None:
-                    cursor = 2
-                    while cursor < len(commitList):
-                        if commitList[cursor][1] != commitList[0][1]:
-                            r = commitList[cursor]
-                            break
-                        cursor = cursor + 1
-                    
-                    targetPair['offset'] = cursor
-                    targetPair['offsetProj'] = targetPair[r[1]]['projectName']
-                    
-                    print("calculate similarity between " + commitList[0][0] + " and " + r[0])
-                    similarityList.append({
-                        "modifiedCommit" : commitList[0][0],
-                        "modifiedCommitContent" : targetPair[commitList[0][1]]['diffHis'][commitList[0][0]],
-                        "modifiedProj" : targetPair[commitList[0][1]]['projectName'],
-                        "unmodifiedCommit" : r[0],
-                        "unmodifiedCommitContent" : targetPair[r[1]]['diffHis'][r[0]],
-                        "similarity" : similarityCalculation(targetPair[commitList[0][1]]['diffHis'][commitList[0][0]]['pathInCommit'], targetPair[commitList[0][1]]['diffHis'][commitList[0][0]]['startLine'], targetPair[commitList[0][1]]['diffHis'][commitList[0][0]]['endLine'], targetPair[r[1]]['diffHis'][r[0]]['pathInCommit'], targetPair[r[1]]['diffHis'][r[0]]['startLine'], targetPair[r[1]]['diffHis'][r[0]]['endLine'], keywordsList, targetPair['language'])
-                    })
-                    commitList.pop(0)
-                # generate similarity between r and commitList[1], and set modifiedCommit, modifiedCommitContent and modifiedProj based on commitList[1]
-                else:
-                    print("calculate similarity between " + r[0] + " and " + commitList[0][0])
-                    similarityList.append({
-                        "modifiedCommit" : commitList[0][0],
-                        "modifiedCommitContent" : targetPair[commitList[0][1]]['diffHis'][commitList[0][0]],
-                        "modifiedProj" : targetPair[commitList[0][1]]['projectName'],
-                        "unmodifiedCommit" : r[0],
-                        "unmodifiedCommitContent" : targetPair[r[1]]['diffHis'][r[0]],
-                        "similarity" : similarityCalculation(targetPair[r[1]]['diffHis'][r[0]]['pathInCommit'], targetPair[r[1]]['diffHis'][r[0]]['startLine'], targetPair[r[1]]['diffHis'][r[0]]['endLine'], targetPair[commitList[0][1]]['diffHis'][commitList[0][0]]['pathInCommit'], targetPair[commitList[0][1]]['diffHis'][commitList[0][0]]['startLine'], targetPair[commitList[0][1]]['diffHis'][commitList[0][0]]['endLine'], keywordsList, targetPair['language'])
-                    })
-                    commitList.pop(0)                
-                
+        cursor = 0
+        while cursor < len(commitList): 
+            
+            targetCursor = cursor + 1
+            
+            while targetCursor < len(commitList) and commitList[targetCursor][1] == commitList[cursor][1]:
+                targetCursor += 1
+       
+            
+            if targetCursor < len(commitList): # positive search
+                similarityList.append(generateSimilarityCalItem(commitList[cursor], commitList[targetCursor]))
 
-    
+            else: # turn to negative search
+                targetCursor = cursor - 1
+                while commitList[targetCursor][1] == commitList[cursor][1]:
+                    targetCursor = targetCursor - 1
+                    if targetCursor < 0:
+                        break
+                
+                if cursor - 1 == targetCursor: # this pair is already calculated
+                    pass
+                else:
+                    similarityList.append(generateSimilarityCalItem(commitList[targetCursor], commitList[cursor]))
+            
+            cursor = cursor + 1
+                    
+            
     
     # step7: output report
     result = {

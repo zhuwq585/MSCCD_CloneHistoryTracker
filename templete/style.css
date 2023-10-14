@@ -13,7 +13,7 @@
     margin-bottom: 50px;
 }
 #segmentInfo .infoLine{
-    text-overflow: clip;
+    overflow: overlay;
 }
 
 #segmentInfo .infoLine span{

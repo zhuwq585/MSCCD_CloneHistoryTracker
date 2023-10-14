@@ -49,20 +49,20 @@ if __name__ == "__main__":
         }
         
         newerCommit = {
-            "commitId" : simiItem_input['modifiedCommit'],
-            "date" : simiItem_input['modifiedCommitContent']['date'],
-            "position" : str(simiItem_input['modifiedCommitContent']['startLine']) + "-" + str(simiItem_input['modifiedCommitContent']['endLine']),
-            "author" : simiItem_input['modifiedCommitContent']['author'],
-            "commitContent" : "".join(simiItem_input['modifiedCommitContent']['Content']),
-            "code" : "".join(getFileContent(simiItem_input['modifiedCommitContent']['pathInCommit'], simiItem_input['modifiedCommitContent']['startLine'], simiItem_input['modifiedCommitContent']['endLine']))
+            "commitId" : simiItem_input['newCommit'],
+            "date" : simiItem_input['newCommitContent']['date'],
+            "position" : str(simiItem_input['newCommitContent']['startLine']) + "-" + str(simiItem_input['newCommitContent']['endLine']),
+            "author" : simiItem_input['newCommitContent']['author'],
+            "commitContent" : "".join(simiItem_input['newCommitContent']['Content']),
+            "code" : "".join(getFileContent(simiItem_input['newCommitContent']['pathInCommit'], simiItem_input['newCommitContent']['startLine'], simiItem_input['newCommitContent']['endLine']))
         }
         olderCommit = {
-            "commitId" : simiItem_input['unmodifiedCommit'],
-            "date" : simiItem_input['unmodifiedCommitContent']['date'],
-            "position" : str(simiItem_input['unmodifiedCommitContent']['startLine']) + "-" + str(simiItem_input['unmodifiedCommitContent']['endLine']),
-            "author" : simiItem_input['unmodifiedCommitContent']['author'],
-            "commitContent" : "".join(simiItem_input['unmodifiedCommitContent']['Content']),
-            "code" : "".join(getFileContent(simiItem_input['unmodifiedCommitContent']['pathInCommit'], simiItem_input['unmodifiedCommitContent']['startLine'], simiItem_input['unmodifiedCommitContent']['endLine']))
+            "commitId" : simiItem_input['oldCommit'],
+            "date" : simiItem_input['oldCommitContent']['date'],
+            "position" : str(simiItem_input['oldCommitContent']['startLine']) + "-" + str(simiItem_input['oldCommitContent']['endLine']),
+            "author" : simiItem_input['oldCommitContent']['author'],
+            "commitContent" : "".join(simiItem_input['oldCommitContent']['Content']),
+            "code" : "".join(getFileContent(simiItem_input['oldCommitContent']['pathInCommit'], simiItem_input['oldCommitContent']['startLine'], simiItem_input['oldCommitContent']['endLine']))
         }
         
         # print(olderCommit['code'])
@@ -70,7 +70,7 @@ if __name__ == "__main__":
         if simiItem_input_index > 0:
             segmentMatching = None # 1: segment1 is the newer version, 2: segment2 is the newer version
             
-            if simiItem_input['modifiedProj'] == result['segment1']['projectName']:## segment1 is the newer version
+            if simiItem_input['newProj'] == result['segment1']['projectName']:## segment1 is the newer version
                 simiItem_output['segment1'] = newerCommit
                 simiItem_output['segment2'] = olderCommit
                 segmentMatching = 1
@@ -80,26 +80,26 @@ if __name__ == "__main__":
                 segmentMatching = 2
                 
             
-            if "diffContent" in simiItem_input['modifiedCommitContent'] and "diffContent" in simiItem_input['unmodifiedCommitContent']:
-                simiItem_output['diffContent'] = simiItem_input['modifiedCommitContent']['diffContent']
+            if "diffContent" in simiItem_input['newCommitContent'] and "diffContent" in simiItem_input['oldCommitContent']:
+                simiItem_output['diffContent'] = simiItem_input['newCommitContent']['diffContent']
                 simiItem_output['diffIndex'] = segmentMatching
             else:
-                if "diffContent" in simiItem_input['modifiedCommitContent']: 
-                    simiItem_output['diffContent'] = simiItem_input['modifiedCommitContent']['diffContent']
+                if "diffContent" in simiItem_input['newCommitContent']: 
+                    simiItem_output['diffContent'] = simiItem_input['newCommitContent']['diffContent']
 
                     if segmentMatching == 1:
                         simiItem_output['diffIndex'] = 1
                     else:
                         simiItem_output['diffIndex'] = 2
-                elif "diffContent" in simiItem_input['unmodifiedCommitContent']:
-                    simiItem_output['diffContent'] = simiItem_input['unmodifiedCommitContent']['diffContent']
+                elif "diffContent" in simiItem_input['oldCommitContent']:
+                    simiItem_output['diffContent'] = simiItem_input['oldCommitContent']['diffContent']
                     
                     if segmentMatching == 1:
                         simiItem_output['diffIndex'] = 2
                     else:
                         simiItem_output['diffIndex'] = 1
         else:
-            if simiItem_input['modifiedProj'] == result['segment1']['projectName']:## segment1 is the newer version
+            if simiItem_input['newProj'] == result['segment1']['projectName']:## segment1 is the newer version
                 simiItem_output['segment1'] = newerCommit
                 simiItem_output['segment2'] = olderCommit
             else:## segment2 is the newer version
