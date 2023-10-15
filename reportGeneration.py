@@ -12,9 +12,9 @@ if __name__ == "__main__":
     # detectionId = sys.argv[2]
     # cloneIndex  = sys.argv[3]
     
-    taskId      = "11011"
+    taskId      = "11008"
     detectionId = "1"
-    cloneIndex  = "26915"
+    cloneIndex  = "138"
     
     trackerResultSource = CLONETRACKER_PATH + "reports/" + taskId + "-" + detectionId + "-" + cloneIndex + "/result.json"
     outputFile = CLONETRACKER_PATH + "reports/" + taskId + "-" + detectionId + "-" + cloneIndex + "/report.html"
@@ -25,13 +25,19 @@ if __name__ == "__main__":
             "projectName" : trackerResult["targetPair"]['segment1']['projectName'],
             "filePath"    : trackerResult["targetPair"]['segment1']['filePath'],
             "functionName": trackerResult["targetPair"]['segment1']['functionName'],
-            "defaultBranch" : trackerResult["targetPair"]['segment1']['defaultBranchName']
+            "defaultBranch" : trackerResult["targetPair"]['segment1']['defaultBranchName'],
+            "commitNum_fileModification" : trackerResult["targetPair"]['segment1']['commitNum_fileModification'],
+            "commitNum_functionIdendified" : trackerResult["targetPair"]['segment1']['commitNum_functionIdendified'],
+            "commitNum_functionModification" : trackerResult["targetPair"]['segment1']['commitNum_functionModification']
         },
         "segment2" : {
             "projectName" : trackerResult["targetPair"]['segment2']['projectName'],
             "filePath"    : trackerResult["targetPair"]['segment2']['filePath'],
             "functionName": trackerResult["targetPair"]['segment2']['functionName'],
-            "defaultBranch" : trackerResult["targetPair"]['segment2']['defaultBranchName']
+            "defaultBranch" : trackerResult["targetPair"]['segment2']['defaultBranchName'],
+            "commitNum_fileModification" : trackerResult["targetPair"]['segment2']['commitNum_fileModification'],
+            "commitNum_functionIdendified" : trackerResult["targetPair"]['segment2']['commitNum_functionIdendified'],
+            "commitNum_functionModification" : trackerResult["targetPair"]['segment2']['commitNum_functionModification']
         },    
         "simiItems" : []
         
@@ -119,3 +125,5 @@ if __name__ == "__main__":
         htmlContent = template.render(report=result)
         HTMLFile.write(htmlContent)
         HTMLFile.close()
+    
+    print("Report generated: " + outputFile)

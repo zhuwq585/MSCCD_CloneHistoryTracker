@@ -39,7 +39,10 @@ def ifFileDifferenceInLineRange(diffHistoryObj1, diffHistoryObj2):
     startLine2 = diffHistoryObj2['startLine']
     endLine2   = diffHistoryObj2['endLine']
     
-    # "./diffInRange.sh " + file1 + " " + str(startLine1) + " " + str(endLine1) + " " + file2 + " " + str(startLine2) + " " + str(endLine2)
+    if startLine1 < 0 or startLine2 < 0 or endLine1 < 0 or endLine2 < 0:
+        return None
+    
+    # diffInRange.sh oldCommitFile startLine1 endLine1 newCommitFile startLine2 endLine2
     cmd = "./diffInRange.sh " + file1 + " " + str(startLine1) + " " + str(endLine1) + " " + file2 + " " + str(startLine2) + " " + str(endLine2)
     res = os.popen(cmd).read()
     if len(res) > 0:
@@ -48,23 +51,30 @@ def ifFileDifferenceInLineRange(diffHistoryObj1, diffHistoryObj2):
         return None
     
 def commitIdListFilterByFileDifferenceInLineRange(commitIdList, diffHistoryDict):
+    
     res = [] # a queue, left side is the oldest commit id
     
+    len_before = len(res)
+    
     if len(commitIdList) > 1:
-        res.append(commitIdList[0])
         
-        cursor = 1
-        while cursor < len(commitIdList):
+        res.append(commitIdList[-1])
+        
+        cursor = len(commitIdList) - 2
+        while cursor >= 0:
             commitId = commitIdList[cursor][0]
-            commitId_pre = res[-1][0]
+            commitId_pre = res[0][0]
             
-            fileDiffRes = ifFileDifferenceInLineRange(diffHistoryDict[commitId_pre], diffHistoryDict[commitId])
-            if fileDiffRes != None:
+            fileDiffRes = ifFileDifferenceInLineRange(diffHistoryDict[commitId], diffHistoryDict[commitId_pre])
+            if fileDiffRes != None:    
+                res.insert(0, commitIdList[cursor])
+                diffHistoryDict[commitId_pre]['diffContent'] = fileDiffRes
                 
-                res.append(commitIdList[cursor])
-                diffHistoryDict[commitId]['diffContent'] = fileDiffRes
-                
-            cursor += 1
+            cursor -= 1
+            
+        if len_before > len(res) and len(res) <= 1:
+            print("Most file modification included commit was filtered out, please check if there are function renaming or file renaming in the commit history")
+            # sys.exit()
         
         return res
    

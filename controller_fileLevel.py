@@ -65,39 +65,39 @@ if __name__ == "__main__":
         "segment1":{
             "projPath" : projList[cloneList[cloneIndex][0][0]],
             "filePath" : fileList[cloneList[cloneIndex][0][0]][cloneList[cloneIndex][0][1]],
-            "startLine" : tokenBagList[cloneList[cloneIndex][0][0]][cloneList[cloneIndex][0][1]][cloneList[cloneIndex][0][2]]["startLine"],
-            "endLine" : tokenBagList[cloneList[cloneIndex][0][0]][cloneList[cloneIndex][0][1]][cloneList[cloneIndex][0][2]]["endLine"],
+            "startLine" : 0,
+            "endLine" : None,
             "projectName" : projList[cloneList[cloneIndex][0][0]].split("/")[-1],
             "defaultBranchName" : getDefaultBranchName(projList[cloneList[cloneIndex][0][0]])
         },
         "segment2":{
             "projPath" : projList[cloneList[cloneIndex][1][0]],
             "filePath" : fileList[cloneList[cloneIndex][1][0]][cloneList[cloneIndex][1][1]],
-            "startLine" : tokenBagList[cloneList[cloneIndex][1][0]][cloneList[cloneIndex][1][1]][cloneList[cloneIndex][1][2]]["startLine"],
-            "endLine" : tokenBagList[cloneList[cloneIndex][1][0]][cloneList[cloneIndex][1][1]][cloneList[cloneIndex][1][2]]["endLine"],
+            "startLine" : 0,
+            "endLine" : None,
             'projectName' : projList[cloneList[cloneIndex][1][0]].split("/")[-1],
             "defaultBranchName" : getDefaultBranchName(projList[cloneList[cloneIndex][1][0]])
         },
         "language" : taskObj['configObj']['tokenizer']
     }
     
+    targetPair['segment1']['endLine'] = len(open(targetPair['segment1']['filePath'], "r").readlines()) - 1
+    targetPair['segment2']['endLine'] = len(open(targetPair['segment2']['filePath'], "r").readlines()) - 1
+    
+    
+    
     switchToHeadCommit(targetPair['segment1']['projPath'], targetPair['segment1']['defaultBranchName'])
     switchToHeadCommit(targetPair['segment2']['projPath'], targetPair['segment2']['defaultBranchName'])
     
     # step2: get function name using ctags
-    targetPair['segment1']['functionName'], targetPair['segment1']['pattern'] = getFunctionName_Ptn(targetPair['segment1']['filePath'], targetPair['segment1']['startLine'], targetPair['segment1']['endLine'], language)
-    targetPair['segment2']['functionName'], targetPair['segment2']['pattern'] = getFunctionName_Ptn(targetPair['segment2']['filePath'], targetPair['segment2']['startLine'], targetPair['segment2']['endLine'], language)
+    # targetPair['segment1']['functionName'], targetPair['segment1']['pattern'] = getFunctionName_Ptn(targetPair['segment1']['filePath'], targetPair['segment1']['startLine'], targetPair['segment1']['endLine'], language)
+    # targetPair['segment2']['functionName'], targetPair['segment2']['pattern'] = getFunctionName_Ptn(targetPair['segment2']['filePath'], targetPair['segment2']['startLine'], targetPair['segment2']['endLine'], language)
     
     
     # step3: get diff history using git
-    targetPair['segment1']['diffHis'] = getDiffHistory(targetPair['segment1']['projPath'], targetPair['segment1']['filePath'], targetPair['segment1']['functionName'])
-    targetPair['segment1']['commitNum_fileModification'] = len(targetPair['segment1']['diffHis'])
-    targetPair['segment1']['commitNum_functionIdendified'] = 0
-    targetPair['segment2']['diffHis'] = getDiffHistory(targetPair['segment2']['projPath'], targetPair['segment2']['filePath'], targetPair['segment2']['functionName'])
-    targetPair['segment2']['commitNum_fileModification'] = len(targetPair['segment2']['diffHis'])
-    targetPair['segment2']['commitNum_functionIdendified'] = 0
-    # diffHis1 = getDiffHistory(targetPair['segment1']['projPath'], targetPair['segment1']['filePath'], targetPair['segment1']['functionName'])
-    # diffHis2 = getDiffHistory(targetPair['segment2']['projPath'], targetPair['segment2']['filePath'], targetPair['segment2']['functionName'])
+    targetPair['segment1']['diffHis'] = getDiffHistory(targetPair['segment1']['projPath'], targetPair['segment1']['filePath'])
+    targetPair['segment2']['diffHis'] = getDiffHistory(targetPair['segment2']['projPath'], targetPair['segment2']['filePath'])
+
     
     # step4: copy target file in each target commit
     # step5: get position of target function in each target file using ctags
@@ -108,15 +108,9 @@ if __name__ == "__main__":
     for commitIdObj in getCommitIdListFromHistoryByDateOrder(targetPair['segment1']['diffHis'], "segment1"):
         pathInCommit = copyTargetFileToFolder(targetPair['segment1']['projPath'], targetPair['segment1']['filePath'], targetPair['segment1']['projectName'], targetPair['segment1']['functionName'], commitIdObj[0], workFolder)
         
-        try:
-            startLine,endLine = getFunctionPosition(pathInCommit, targetPair['segment1']['functionName'], targetPair['segment1']['pattern'], language)
-        except TypeError:
-            print("Error: " + pathInCommit + " " + targetPair['segment1']['functionName'] + " " + targetPair['segment1']['pattern'])
-            startLine = -1
-            endLine = -1
-        
-        if startLine >= 0 and endLine >= 0:
-            targetPair['segment1']['commitNum_functionIdendified'] += 1
+        startLine = 0
+        endLine = len(open(pathInCommit, "r").readlines()) - 1
+            
         targetPair['segment1']['diffHis'][commitIdObj[0]]['startLine'] = startLine
         targetPair['segment1']['diffHis'][commitIdObj[0]]['endLine'] = endLine
         targetPair['segment1']['diffHis'][commitIdObj[0]]['pathInCommit'] = pathInCommit
@@ -126,15 +120,9 @@ if __name__ == "__main__":
     for commitIdObj in getCommitIdListFromHistoryByDateOrder(targetPair['segment2']['diffHis'],"segment2"):
         pathInCommit = copyTargetFileToFolder(targetPair['segment2']['projPath'], targetPair['segment2']['filePath'], targetPair['segment2']['projectName'], targetPair['segment2']['functionName'], commitIdObj[0], workFolder)
 
-        try:
-            startLine,endLine = getFunctionPosition(pathInCommit, targetPair['segment2']['functionName'], targetPair['segment2']['pattern'],language)
-        except TypeError:
-            print("Error: Can not find function position" + pathInCommit + " " + targetPair['segment2']['functionName'] + " " + targetPair['segment2']['pattern'])
-            startLine = -1
-            endLine = -1
+        startLine = 0
+        endLine = len(open(pathInCommit, "r").readlines()) - 1
             
-        if startLine >= 0 and endLine >= 0:
-            targetPair['segment2']['commitNum_functionIdendified'] += 1
         targetPair['segment2']['diffHis'][commitIdObj[0]]['startLine'] = startLine
         targetPair['segment2']['diffHis'][commitIdObj[0]]['endLine'] = endLine
         targetPair['segment2']['diffHis'][commitIdObj[0]]['pathInCommit'] = pathInCommit
@@ -144,21 +132,15 @@ if __name__ == "__main__":
     # step6: similarity calculation 
     
     similarityList = []
-    commitList1 = commitIdListFilterByFileDifferenceInLineRange(getCommitIdListFromHistoryByDateOrder(targetPair['segment1']['diffHis'],"segment1"), targetPair['segment1']['diffHis']) 
-    commitList2 = commitIdListFilterByFileDifferenceInLineRange(getCommitIdListFromHistoryByDateOrder(targetPair['segment2']['diffHis'],"segment2"), targetPair['segment2']['diffHis']) 
+    commitList1 = getCommitIdListFromHistoryByDateOrder(targetPair['segment1']['diffHis'],"segment1")
+    commitList2 = getCommitIdListFromHistoryByDateOrder(targetPair['segment2']['diffHis'],"segment2")
     
-    targetPair['segment1']['commitNum_functionModification'] = len(commitList1)
-    targetPair['segment2']['commitNum_functionModification'] = len(commitList2)
-    
-    commitList  = mergeTwoCommitIdListByDateOrder(commitList1, commitList2)
-
-    if len(commitList) == 2:
-        print("No modification found in both functions.")
-        similarityList.append(generateSimilarityCalItem(commitList[0], commitList[1]))
-        
-        
+    if len(commitList1) <= 1 and len(commitList2) <= 1:
+        print("No modification in both segments")
+        similarityList.append(generateSimilarityCalItem(commitList1[0], commitList2[0]))
         
     else:
+        commitList  = mergeTwoCommitIdListByDateOrder(commitList1, commitList2)
         
         cursor = 0
         while cursor < len(commitList): 

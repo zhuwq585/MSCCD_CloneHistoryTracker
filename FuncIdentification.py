@@ -45,32 +45,6 @@ def getFunctionName_Ptn_Cpp(path, startLine, endLine):
             pattern = class_name + "@@" + "::".join(function_params_type)
             
             return function_name, pattern
-
-def getFunctionName_Ptn_JavaScript(path, startLine, endLine):
-    cmd = "jsctags " + path
-    res = os.popen(cmd).read()
-    for jsctagItem in ujson.loads(res):
-            #    jsctagItem =     {
-            #     "id": "e7087d3e-6418-11ee-8a1b-57af52f350c4",
-            #     "name": "languages2words",
-            #     "addr": "/languages2words/",
-            #     "kind": "f",
-            #     "type": "void function(string)",
-            #     "lineno": 283,
-            #     "origin": {
-            #       "!span": "8439[282:9]-8454[282:24]",
-            #       "!type": "fn(src: string)",
-            #       "!data": {
-            #         "isConstructor": false,
-            #         "type": "Function.prototype"
-            #       }
-            #     },
-            #     "tagfile": "/Users/syu/TestRepos/JavaScript/ioBroker.hue/CTagsTest/gulpfile.js"
-            #   }
-        startLine_jsctag = jsctagItem['lineno']
-        endLine_jsctag = jsctagItem['origin']['!span'].split("-")[1].split("[")[1].split(":")[0]
-        if startLine_jsctag == startLine and endLine_jsctag == endLine and jsctagItem['kind'] == "f":
-            return jsctagItem['name'], jsctagItem['origin']['type']
         
 
 
@@ -90,29 +64,56 @@ def getFunctionName_Ptn_CTAG(path, startLine, endLine, language):
     return None
 
 
+
+def getFunctionName_Ptn_JavaScript(path, startLine, endLine):
+    # node JSFunctionExtraction.js path
+    cmd = "node JSFunctionExtraction.js " + path
+    jsFuncItemsSources = os.popen(cmd).readlines()
+    
+    for line in jsFuncItemsSources:
+        jsFuncItem = ujson.loads(line)
+        startLine_jsctag = jsFuncItem['startLine']
+        endLine_jsctag = jsFuncItem['endLine']
+        
+        ptn = ""
+        for param in jsFuncItem['params']:
+            ptn += param['type'] + "@@"
+        if len(ptn) == 0:
+            ptn = "--"
+        
+        if startLine_jsctag == startLine and endLine_jsctag == endLine:
+            res = (jsFuncItem['name'], ptn)
+    
+    return res[0], res[1]
+
 # get function position in the file by function name and pattern
 
-
-
-
 def getFunctionPosition_JavaScript(path, functionName, patternString):
-    cmd = "jsctags " + path
+    cmd = "node JSFunctionExtraction.js " + path
     if not os.path.exists(path):
         # wait 1 second and try again
         time.sleep(1)
     
     if os.path.exists(path):
-        res = os.popen(cmd).read()
-        for jsctagItem in ujson.loads(res):
-            if jsctagItem['name'] == functionName and jsctagItem['origin']['type'] == patternString and jsctagItem['kind'] == "f":
-                return jsctagItem['lineno'], jsctagItem['origin']['!span'].split("-")[1].split("[")[1].split(":")[0]   
+        jsFuncItemsSource = os.popen(cmd).readlines()
+        for line in jsFuncItemsSource:
+            jsFuncItem = ujson.loads(line)
+            
+            jsctagPtn = ""
+            for param in jsFuncItem['params']:
+                jsctagPtn += param['type'] + "@@"
+            if len(jsctagPtn) == 0:
+                jsctagPtn = "--"
+            
+            if jsFuncItem['name'] == functionName and jsctagPtn == patternString:
+                return jsFuncItem['startLine'], jsFuncItem['endLine']
         
-        print("Cannot find function: " + functionName + " in file: " + path)
-        if input("Do you want to continue to input line number manually? (y/n)") != "n":
-            startLine = input("Please input start line: ")
-            endLine = input("Please input end line: ")
-            return int(startLine), int(endLine)
-        return None,None 
+        # print("Cannot find function: " + functionName + " in file: " + path)
+        # if input("Do you want to continue to input line number manually? (y/n)") != "n":
+        #     startLine = input("Please input start line: ")
+        #     endLine = input("Please input end line: ")
+        #     return int(startLine), int(endLine)
+        return -1,-1
 
 
 def getFunctionPosition_CTag(path, functionName, patternString, language):
@@ -140,13 +141,12 @@ def getFunctionPosition_CTag(path, functionName, patternString, language):
         # an example that code provided by capilot is buggy
         # print("Cannot find function: " + functionName + " in file: " + path")
         
-        print("Cannot find function: " + functionName + " in file: " + path)
-        if input("Do you want to continue to input line number manually? (y/n)") != "n":
-            startLine = input("Please input start line: ")
-            endLine = input("Please input end line: ")
-            return int(startLine), int(endLine)
-        return None,None
-    
+        # print("Cannot find function: " + functionName + " in file: " + path)
+        # if input("Do you want to continue to input line number manually? (y/n)") != "n":
+        #     startLine = input("Please input start line: ")
+        #     endLine = input("Please input end line: ")
+        #     return int(startLine), int(endLine)
+        return -1,-1    
     else:
         print("Error(getFunctionPosition): file not found: " + path)
         return None
@@ -179,12 +179,12 @@ def getFunctionPosition_Cpp(path, functionName, patternString):
                 if function_name == functionName and pattern == patternString:
                     return cursor.extent.start.line, cursor.extent.end.line
         
-        print("Cannot find function: " + functionName + " in file: " + path)
-        if input("Do you want to continue to input line number manually? (y/n)") != "n":
-            startLine = input("Please input start line: ")
-            endLine = input("Please input end line: ")
-            return int(startLine), int(endLine)
-        return None,None
+        # print("Cannot find function: " + functionName + " in file: " + path)
+        # if input("Do you want to continue to input line number manually? (y/n)") != "n":
+        #     startLine = input("Please input start line: ")
+        #     endLine = input("Please input end line: ")
+        #     return int(startLine), int(endLine)
+        return -1,-1
     
     else:
         print("Error(getFunctionPosition): file not found: " + path)

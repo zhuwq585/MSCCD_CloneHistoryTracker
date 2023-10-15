@@ -22,15 +22,15 @@ public class ParserController {
                 return false;
             }
             CharStream input = CharStreams.fromFileName(filePath);
-            GoLexer lexer = new GoLexer(input);
+            JavaScriptLexer lexer = new JavaScriptLexer(input);
 
             CommonTokenStream tokens = new CommonTokenStream(lexer);
 
             tokens.getNumberOfOnChannelTokens();
 
-            GoParser parser = new GoParser(tokens);
+            JavaScriptParser parser = new JavaScriptParser(tokens);
 
-            ParseTree tree = parser.sourceFile();
+            ParseTree tree = parser.program();
             pTree = tree;
             lexicalUnits = tokens.getTokens();
         }catch (Exception e){ 
