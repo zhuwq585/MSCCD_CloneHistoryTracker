@@ -7,6 +7,26 @@
     border-right: 3px solid #ccc;
 }
 
+#vectorCanvas{
+    margin: 0 auto;
+    min-width: 300px;
+}
+
+.mleft, .mright {
+    width: 35%;
+    display: inline-block;
+    vertical-align: top;
+}
+.mMiddle{
+    width: 29%;
+    display: inline-block;
+    vertical-align: top;
+    text-align: center;
+    margin: 0 auto;
+}
+.mright{
+    text-align: right;
+}
 #segmentInfo{
     border: 3px solid #ccc;
     padding: 10px;
@@ -35,3 +55,21 @@ pre{
     text-align: left;
 }
 
+.similarity{
+    text-align: center;
+    vertical-align: text-bottom;
+}
+.similarity span{
+    display: inline-block;
+    height: 20px;
+}
+
+#test{
+    height: 20px;
+    width: 100px;
+    margin: 0 20px;
+    /* background-color: aqua; */
+
+    display: inline-block;
+
+}

@@ -7,14 +7,52 @@ def getFileContent(file, startLine, endLine):
     if os.path.exists(file):
         return open(file,"r").readlines()[startLine-1:endLine]
 
+def generateJSONForDVG( commitList, similarityList):
+
+    # res = {
+    #     "points" : [
+    #         {
+    #             "segment" : "1",
+    #             "commitId" : "1",
+    #             "indexInList" : 0   
+    #         }
+    #     ],
+    #     "links" : [ ["index1", "index2"] ]
+    # }
+
+    
+
+    res = {
+        "points" : [],  # older to newer
+        "links" : []
+    }
+    for commitIndex in range(len(commitList)):
+        res['points'].append({
+            "segment" : commitList[commitIndex][1],
+            "commitId" : commitList[commitIndex][0],
+            "indexInList" : commitIndex
+        })
+    
+    for simiItem in similarityList:
+        linkItem = []
+        for pointIndex in range(len(res['points'])):
+            if res['points'][pointIndex]['commitId'] == simiItem['segment1']['commitId'] or res['points'][pointIndex]['commitId'] == simiItem['segment2']['commitId']:
+                linkItem.append(pointIndex)
+        res['links'].append(linkItem)
+
+            
+            
+    # open(outputFile,"w").write(ujson.dumps(res))
+    return res
+
 if __name__ == "__main__":
     # taskId      = sys.argv[1]
     # detectionId = sys.argv[2]
     # cloneIndex  = sys.argv[3]
     
-    taskId      = "11008"
+    taskId      = "11011"
     detectionId = "1"
-    cloneIndex  = "138"
+    cloneIndex  = "26915"
     
     trackerResultSource = CLONETRACKER_PATH + "reports/" + taskId + "-" + detectionId + "-" + cloneIndex + "/result.json"
     outputFile = CLONETRACKER_PATH + "reports/" + taskId + "-" + detectionId + "-" + cloneIndex + "/report.html"
@@ -44,80 +82,32 @@ if __name__ == "__main__":
     }
     
     for simiItem_input_index in range(len(trackerResult["similarityList"])):
+        
         simiItem_input = trackerResult["similarityList"][simiItem_input_index]
+        
         simiItem_output = {
-            "segment1" : {},
-            "segment2" : {},
+            "segment1" : simiItem_input['segment1'],
+            "segment2" : simiItem_input['segment2'],
             "diffContent": "",
-            "diffIndex" : None,
+            "reasonSegment" : simiItem_input['reasonSegment'],
+            "newerSegment" : simiItem_input['newerSegment'],
             "oSimi": simiItem_input['similarity'][0],
-            "lSimi": simiItem_input['similarity'][1]
+            "lSimi": simiItem_input['similarity'][1],
+            "index" : simiItem_input_index
         }
         
-        newerCommit = {
-            "commitId" : simiItem_input['newCommit'],
-            "date" : simiItem_input['newCommitContent']['date'],
-            "position" : str(simiItem_input['newCommitContent']['startLine']) + "-" + str(simiItem_input['newCommitContent']['endLine']),
-            "author" : simiItem_input['newCommitContent']['author'],
-            "commitContent" : "".join(simiItem_input['newCommitContent']['Content']),
-            "code" : "".join(getFileContent(simiItem_input['newCommitContent']['pathInCommit'], simiItem_input['newCommitContent']['startLine'], simiItem_input['newCommitContent']['endLine']))
-        }
-        olderCommit = {
-            "commitId" : simiItem_input['oldCommit'],
-            "date" : simiItem_input['oldCommitContent']['date'],
-            "position" : str(simiItem_input['oldCommitContent']['startLine']) + "-" + str(simiItem_input['oldCommitContent']['endLine']),
-            "author" : simiItem_input['oldCommitContent']['author'],
-            "commitContent" : "".join(simiItem_input['oldCommitContent']['Content']),
-            "code" : "".join(getFileContent(simiItem_input['oldCommitContent']['pathInCommit'], simiItem_input['oldCommitContent']['startLine'], simiItem_input['oldCommitContent']['endLine']))
-        }
+        simiItem_output['segment1']['code'] = "".join(getFileContent(simiItem_input['segment1']['commitContent']['pathInCommit'], simiItem_input['segment1']['commitContent']['startLine'], simiItem_input['segment1']['commitContent']['endLine']))
+        simiItem_output['segment2']['code'] = "".join(getFileContent(simiItem_input['segment2']['commitContent']['pathInCommit'], simiItem_input['segment2']['commitContent']['startLine'], simiItem_input['segment2']['commitContent']['endLine']))
         
-        # print(olderCommit['code'])
+        if simiItem_input_index > 0:   # show diff content
         
-        if simiItem_input_index > 0:
-            segmentMatching = None # 1: segment1 is the newer version, 2: segment2 is the newer version
-            
-            if simiItem_input['newProj'] == result['segment1']['projectName']:## segment1 is the newer version
-                simiItem_output['segment1'] = newerCommit
-                simiItem_output['segment2'] = olderCommit
-                segmentMatching = 1
-            else:## segment2 is the newer version
-                simiItem_output['segment1'] = olderCommit
-                simiItem_output['segment2'] = newerCommit
-                segmentMatching = 2
-                
-            
-            if "diffContent" in simiItem_input['newCommitContent'] and "diffContent" in simiItem_input['oldCommitContent']:
-                simiItem_output['diffContent'] = simiItem_input['newCommitContent']['diffContent']
-                simiItem_output['diffIndex'] = segmentMatching
-            else:
-                if "diffContent" in simiItem_input['newCommitContent']: 
-                    simiItem_output['diffContent'] = simiItem_input['newCommitContent']['diffContent']
-
-                    if segmentMatching == 1:
-                        simiItem_output['diffIndex'] = 1
-                    else:
-                        simiItem_output['diffIndex'] = 2
-                elif "diffContent" in simiItem_input['oldCommitContent']:
-                    simiItem_output['diffContent'] = simiItem_input['oldCommitContent']['diffContent']
-                    
-                    if segmentMatching == 1:
-                        simiItem_output['diffIndex'] = 2
-                    else:
-                        simiItem_output['diffIndex'] = 1
-        else:
-            if simiItem_input['newProj'] == result['segment1']['projectName']:## segment1 is the newer version
-                simiItem_output['segment1'] = newerCommit
-                simiItem_output['segment2'] = olderCommit
-            else:## segment2 is the newer version
-                simiItem_output['segment1'] = olderCommit
-                simiItem_output['segment2'] = newerCommit
-            simiItem_output['diffIndex'] = 0
-                
-
-   
+            if "diffContent" in simiItem_input[simiItem_input['reasonSegment']]['commitContent']:
+                simiItem_output['diffContent'] = simiItem_input[simiItem_input['reasonSegment']]['commitContent']['diffContent']
         
         result['simiItems'].append(simiItem_output)
         
+    result['DVGData'] = generateJSONForDVG(trackerResult['commitList'], trackerResult['similarityList'])
+    
         
     env = Environment(loader=FileSystemLoader('./'))
     template = env.get_template('templete/templete.html')

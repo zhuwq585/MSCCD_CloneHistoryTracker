@@ -8,7 +8,7 @@
     </head>
     <body>
         <div id="segmentInfo">
-            <div class="left">
+            <div class="mleft">
                 <h2>Segment1</h2>
                 <div class="infoPanel">
                     <div class="infoLine">
@@ -34,7 +34,12 @@
                     </div>
                 </div>
             </div>
-            <div class="right">
+            <div class="mMiddle">
+                <canvas id="vectorCanvas" height="200px"></canvas>
+            </div>
+            
+
+            <div class="mright">
                 <h2>Segment2</h2>
                 <div class="infoPanel">
                     <div class="infoLine">
@@ -65,23 +70,35 @@
         <div id="main">
             {% for simiItem in report.simiItems %}
 
-            {% if simiItem.diffIndex != 0 %}
+            {% if simiItem.index != 0 %}
             <div class="diff">
                 <div class="left">
-                    {% if simiItem.diffIndex == 1 %}
+                    {% if simiItem.reasonSegment == "segment1" %}
                     <pre><code>{{simiItem.diffContent}}</code></pre>
                     {% endif %}
                 </div>
+
                 <div class="right">
-                    {% if simiItem.diffIndex == 2 %}
+                    {% if simiItem.reasonSegment == "segment2" %}
                     <pre><code>{{simiItem.diffContent}}</code></pre>
                     {% endif %}
                 </div>
             </div>
             {% endif %}
+
             <div class="simiItem">
                 <div class="similarity">
                     <span>Overlap Similarity:  {{simiItem.oSimi}}</span>
+
+                    <div id="test">
+                        {% if simiItem.newerSegment == "segment1" %}
+                            <span> <- New </span>
+                        {% else %}
+                            <span>  New -> </span>
+                        {% endif %}
+
+                    </div>
+
                     <span>LCS Similarity:  {{simiItem.lSimi}}</span>
                 </div>
                 <div class="left">
@@ -90,13 +107,13 @@
                             <span>Commit Id: </span> {{simiItem.segment1.commitId}}
                         </div>
                         <div class="infoLine">
-                            <span>Date: </span> {{simiItem.segment1.date}}
+                            <span>Date: </span> {{simiItem.segment1.commitContent.date}}
                         </div>
                         <div class="infoLine">
-                            <span>Position: </span> {{simiItem.segment1.position}}
+                            <span>Position: </span> {{simiItem.segment1.commitContent.startLine ~ "-" ~ simiItem.segment1.commitContent.endLine}}
                         </div>
                         <div class="infoLine">
-                            <span>Author: </span> {{simiItem.segment1.author}}
+                            <span>Author: </span> {{simiItem.segment1.commitContent.author}}
                         </div>
                     </div>
                     <div class="code">
@@ -113,13 +130,13 @@
                             <span>Commit Id: </span> {{simiItem.segment2.commitId}}
                         </div>
                         <div class="infoLine">
-                            <span>Date: </span> {{simiItem.segment2.date}}
+                            <span>Date: </span> {{simiItem.segment2.commitContent.date}}
                         </div>
                         <div class="infoLine">
-                            <span>Position: </span> {{simiItem.segment2.position}}
+                            <span>Position: </span> {{simiItem.segment2.commitContent.startLine ~ "-" ~ simiItem.segment2.commitContent.endLine}}
                         </div>
                         <div class="infoLine">
-                            <span>Author: </span> {{simiItem.segment2.author}}
+                            <span>Author: </span> {{simiItem.segment2.commitContent.author}}
                         </div>
                     </div>
                     <div class="code">
@@ -142,5 +159,109 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/languages/go.min.js"></script>
 <script>
     hljs.highlightAll();</script>
+
+    
+    <script>
+        DVGData = {{report.DVGData}};
+
+
+        const canvas = document.getElementById("vectorCanvas");
+        const ctx = canvas.getContext("2d");
+
+        const canvasHeight = canvas.height;
+        const canvasWidth = canvas.width;
+
+        // configuration
+
+        const X1 = 50;
+        const margin_top = 30
+        const margin_left_right = 30
+        const arc_size = 5
+
+        const lineWidth = 2
+        const gap_line = canvasWidth - 2 * margin_left_right - 2 * lineWidth
+        const X2 = X1 + gap_line;
+        //const gap_size_point = 20
+        const gap_num_line = DVGData.points.length  + 1
+        const gap_size_point = Math.floor((canvasHeight - margin_top) / gap_num_line)
+        const length_line = gap_num_line * gap_size_point
+        //const gap_line = 200
+  
+        
+
+
+        ctx.fillText("segment1", X1 - 25, margin_top - 5);
+
+        
+
+        // 绘制直线1
+        ctx.beginPath();
+        ctx.moveTo(X1, margin_top);
+        ctx.lineTo(X1, margin_top + length_line);
+
+        ctx.moveTo(X1, margin_top);
+        ctx.lineTo(X1 + arc_size, margin_top + arc_size);
+        ctx.moveTo(X1, margin_top);
+        ctx.lineTo(X1 - arc_size, margin_top + arc_size);
+        ctx.moveTo(X1, margin_top + length_line);
+        
+        ctx.closePath();
+        ctx.lineWidth = lineWidth;
+        ctx.stroke();
+
+        ctx.fillText("segment2", X2 - 30, margin_top - 5);
+
+        
+
+        // 绘制直线2
+        ctx.beginPath();
+        ctx.moveTo(X2, margin_top);
+        ctx.lineTo(X2, margin_top + length_line);
+
+        ctx.moveTo(X2, margin_top);
+        ctx.lineTo(X2 + arc_size, margin_top + arc_size);
+        ctx.moveTo(X2, margin_top);
+        ctx.lineTo(X2 - arc_size, margin_top + arc_size);
+        ctx.moveTo(X2, margin_top + length_line);
+
+        ctx.closePath();
+        ctx.lineWidth = lineWidth;
+        ctx.stroke();
+
+
+        // 绘制点
+        ctx.fillStyle = "red";
+        for (let pointIndex = 0; pointIndex < DVGData.points.length; pointIndex++){
+            ctx.beginPath();
+            if ( DVGData.points[pointIndex].segment == "segment1" ){
+                ctx.arc(X1, margin_top + (gap_num_line - pointIndex - 1) * gap_size_point, 5, 0, 2 * Math.PI);
+                DVGData.points[pointIndex].x = X1
+                DVGData.points[pointIndex].y = margin_top + (gap_num_line - pointIndex - 1) * gap_size_point
+           
+            } else {
+                ctx.arc(X2, margin_top + (gap_num_line - pointIndex - 1) * gap_size_point, 5, 0, 2 * Math.PI);
+                DVGData.points[pointIndex].x = X2
+                DVGData.points[pointIndex].y = margin_top + (gap_num_line - pointIndex - 1) * gap_size_point
+            }
+
+            ctx.fill();
+        }
+
+        // 连接点
+        ctx.beginPath();
+        DVGData.links.forEach(linkArr => {
+            ctx.moveTo(DVGData.points[linkArr[0]].x, DVGData.points[linkArr[0]].y);
+            ctx.lineTo(DVGData.points[linkArr[1]].x, DVGData.points[linkArr[1]].y);
+        });
+        ctx.lineWidth = lineWidth;
+        ctx.stroke();
+
+
+        ctx.fillText("new", 0, 10);
+        ctx.fillText("old", 0, canvasHeight);
+
+
+
+    </script>
 
 </html>

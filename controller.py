@@ -19,15 +19,48 @@ def similarityCalculation(filePath1, startLine1, endLine1, filePath2, startLine2
     else:
         return None, None
     
-def generateSimilarityCalItem(olderCommitItem, newerCommitItem):
-    res = {
-        "newCommit" : newerCommitItem[0],
-        "newCommitContent" : targetPair[newerCommitItem[1]]['diffHis'][newerCommitItem[0]],
-        "newProj" : targetPair[newerCommitItem[1]]['projectName'],
-        "oldCommit" : olderCommitItem[0],
-        "oldCommitContent" : targetPair[olderCommitItem[1]]['diffHis'][olderCommitItem[0]],
-        "similarity" : similarityCalculation(targetPair[olderCommitItem[1]]['diffHis'][olderCommitItem[0]]['pathInCommit'], targetPair[olderCommitItem[1]]['diffHis'][olderCommitItem[0]]['startLine'], targetPair[olderCommitItem[1]]['diffHis'][olderCommitItem[0]]['endLine'], targetPair[newerCommitItem[1]]['diffHis'][newerCommitItem[0]]['pathInCommit'], targetPair[newerCommitItem[1]]['diffHis'][newerCommitItem[0]]['startLine'], targetPair[newerCommitItem[1]]['diffHis'][newerCommitItem[0]]['endLine'], keywordsList, targetPair['language'])
-    }   
+def generateSimilarityCalItem(olderCommitItem, newerCommitItem, reasonSegment):
+    # olderCommitItem, newerCommitItem
+    # res = {
+    #     "newCommit" : newerCommitItem[0],
+    #     "newCommitContent" : targetPair[newerCommitItem[1]]['diffHis'][newerCommitItem[0]],
+    #     "newProj" : targetPair[newerCommitItem[1]]['projectName'],
+    #     "oldCommit" : olderCommitItem[0],
+    #     "oldCommitContent" : targetPair[olderCommitItem[1]]['diffHis'][olderCommitItem[0]],
+    #     "similarity" : similarityCalculation(targetPair[olderCommitItem[1]]['diffHis'][olderCommitItem[0]]['pathInCommit'], targetPair[olderCommitItem[1]]['diffHis'][olderCommitItem[0]]['startLine'], targetPair[olderCommitItem[1]]['diffHis'][olderCommitItem[0]]['endLine'], targetPair[newerCommitItem[1]]['diffHis'][newerCommitItem[0]]['pathInCommit'], targetPair[newerCommitItem[1]]['diffHis'][newerCommitItem[0]]['startLine'], targetPair[newerCommitItem[1]]['diffHis'][newerCommitItem[0]]['endLine'], keywordsList, targetPair['language'])
+    # }  
+    if olderCommitItem[1] == "segment1": 
+        res = {
+            "segment1" : {
+                "commitId" : olderCommitItem[0],
+                "commitContent" : targetPair[olderCommitItem[1]]['diffHis'][olderCommitItem[0]],
+                "proj" : targetPair[olderCommitItem[1]]['projectName'],
+            },
+            "segment2" : {
+                "commitId" : newerCommitItem[0],
+                "commitContent" : targetPair[newerCommitItem[1]]['diffHis'][newerCommitItem[0]],
+                "proj" : targetPair[newerCommitItem[1]]['projectName']
+            },
+            "newerSegment" : newerCommitItem[1],
+            "reasonSegment" :  reasonSegment,
+            "similarity" : similarityCalculation(targetPair[olderCommitItem[1]]['diffHis'][olderCommitItem[0]]['pathInCommit'], targetPair[olderCommitItem[1]]['diffHis'][olderCommitItem[0]]['startLine'], targetPair[olderCommitItem[1]]['diffHis'][olderCommitItem[0]]['endLine'], targetPair[newerCommitItem[1]]['diffHis'][newerCommitItem[0]]['pathInCommit'], targetPair[newerCommitItem[1]]['diffHis'][newerCommitItem[0]]['startLine'], targetPair[newerCommitItem[1]]['diffHis'][newerCommitItem[0]]['endLine'], keywordsList, targetPair['language'])
+        }
+    elif olderCommitItem[1] == "segment2":
+        res = {
+            "segment2" : {
+                "commitId" : olderCommitItem[0],
+                "commitContent" : targetPair[olderCommitItem[1]]['diffHis'][olderCommitItem[0]],
+                "proj" : targetPair[olderCommitItem[1]]['projectName'],
+            },
+            "segment1" : {
+                "commitId" : newerCommitItem[0],
+                "commitContent" : targetPair[newerCommitItem[1]]['diffHis'][newerCommitItem[0]],
+                "proj" : targetPair[newerCommitItem[1]]['projectName']
+            },
+            "newerSegment" : newerCommitItem[1],
+            "reasonSegment" :  reasonSegment,
+            "similarity" : similarityCalculation(targetPair[olderCommitItem[1]]['diffHis'][olderCommitItem[0]]['pathInCommit'], targetPair[olderCommitItem[1]]['diffHis'][olderCommitItem[0]]['startLine'], targetPair[olderCommitItem[1]]['diffHis'][olderCommitItem[0]]['endLine'], targetPair[newerCommitItem[1]]['diffHis'][newerCommitItem[0]]['pathInCommit'], targetPair[newerCommitItem[1]]['diffHis'][newerCommitItem[0]]['startLine'], targetPair[newerCommitItem[1]]['diffHis'][newerCommitItem[0]]['endLine'], keywordsList, targetPair['language'])
+        }
     return res
 
 
@@ -42,11 +75,11 @@ if __name__ == "__main__":
     # language = sys.argv[5]
     
     ### for test
-    taskId      = "11008"
+    taskId      = "11011"
     detectionId = "1"
-    cloneIndex  = 138
-    keywordsList = "/Users/syu/workspace/MSCCD/grammarDefinations/JavaScript/JavaScript.reserved"
-    language = "JavaScript" #{"Java", "Go", "C","JavaScript","C++"}
+    cloneIndex  = 26915
+    keywordsList = "/Users/syu/workspace/MSCCD/grammarDefinations/Java9/Java9.reserved"
+    language = "Java" #{"Java", "Go", "C","JavaScript","C++"}
     # "/Users/syu/workspace/MSCCD/grammarDefinations/Java9/Java9.reserved"
     
     workFolder = './reports/' + taskId + "-" + detectionId + "-" + str(cloneIndex) + "/"
@@ -154,37 +187,39 @@ if __name__ == "__main__":
 
     if len(commitList) == 2:
         print("No modification found in both functions.")
-        similarityList.append(generateSimilarityCalItem(commitList[0], commitList[1]))
+        similarityList.append(generateSimilarityCalItem(commitList[0], commitList[1], commitList[1][1]))
         
         
         
     else:
         
-        cursor = 0
-        while cursor < len(commitList): 
+        cursor = len(commitList) - 1
+        while cursor >= 0: 
             
-            targetCursor = cursor + 1
+            targetCursor = cursor - 1
             
-            while targetCursor < len(commitList) and commitList[targetCursor][1] == commitList[cursor][1]:
-                targetCursor += 1
+            while targetCursor >= 0 and commitList[targetCursor][1] == commitList[cursor][1]:
+                targetCursor -= 1
        
             
-            if targetCursor < len(commitList): # positive search
-                similarityList.append(generateSimilarityCalItem(commitList[cursor], commitList[targetCursor]))
+            if targetCursor >= 0: # got target by positive search (new -> old)
+                
+                similarityList.insert(0, generateSimilarityCalItem(commitList[targetCursor], commitList[cursor], commitList[cursor][1]))
 
-            else: # turn to negative search
-                targetCursor = cursor - 1
+            else: # no older commit at the other side, negative search (old -> new) to find the cloest one
+                targetCursor = cursor + 1
                 while commitList[targetCursor][1] == commitList[cursor][1]:
-                    targetCursor = targetCursor - 1
-                    if targetCursor < 0:
+                    targetCursor = targetCursor + 1
+                    if targetCursor >= len(commitList):
                         break
                 
-                if cursor - 1 == targetCursor: # this pair is already calculated
-                    pass
+                if cursor + 1 == targetCursor: # this pair is already calculated but reasonSegment does not have diffContent (because it is the first commit) # update it by this one
+                    similarityList.pop(0)
+                    similarityList.insert(0, generateSimilarityCalItem(commitList[cursor], commitList[targetCursor], commitList[cursor][1]))
                 else:
-                    similarityList.append(generateSimilarityCalItem(commitList[targetCursor], commitList[cursor]))
+                    similarityList.insert(0, generateSimilarityCalItem(commitList[cursor], commitList[targetCursor], commitList[cursor][1]))
             
-            cursor = cursor + 1
+            cursor = cursor - 1
                     
             
     
@@ -194,7 +229,8 @@ if __name__ == "__main__":
         "detectionId": detectionId,
         "cloneIndex": cloneIndex,
         "targetPair" : targetPair,
-        "similarityList" : similarityList
+        "similarityList" : similarityList,
+        "commitList" : commitList
     }
     
     open(workFolder + "result.json", "w").write(ujson.dumps(result, indent=2))
