@@ -1,5 +1,5 @@
 {
-    "parser": "grammarDefinations/JavaScript",
-    "grammarName": "JavaScript",
-    "startSymbol": "program"
+    "parser": "grammarDefinations/cpp",
+    "grammarName": "CPP14",
+    "startSymbol": "translationUnit"
 }

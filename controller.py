@@ -76,10 +76,10 @@ if __name__ == "__main__":
     
     ### for test
     taskId      = "11011"
-    detectionId = "1"
-    cloneIndex  = 26915
-    keywordsList = "/Users/syu/workspace/MSCCD/grammarDefinations/Java9/Java9.reserved"
-    language = "Java" #{"Java", "Go", "C","JavaScript","C++"}
+    detectionId = "3"
+    cloneIndex  = 10790
+    keywordsList = "/Users/syu/workspace/MSCCD/grammarDefinations/Go/Go.reserved"
+    language = "Go" #{"Java", "Go", "C","JavaScript","C++"}
     # "/Users/syu/workspace/MSCCD/grammarDefinations/Java9/Java9.reserved"
     
     workFolder = './reports/' + taskId + "-" + detectionId + "-" + str(cloneIndex) + "/"
@@ -123,10 +123,10 @@ if __name__ == "__main__":
     
     
     # step3: get diff history using git
-    targetPair['segment1']['diffHis'] = getDiffHistory(targetPair['segment1']['projPath'], targetPair['segment1']['filePath'], targetPair['segment1']['functionName'])
+    targetPair['segment1']['diffHis'] = getDiffHistory(targetPair['segment1']['projPath'], targetPair['segment1']['filePath'], targetPair['segment1']['defaultBranchName'])
     targetPair['segment1']['commitNum_fileModification'] = len(targetPair['segment1']['diffHis'])
     targetPair['segment1']['commitNum_functionIdendified'] = 0
-    targetPair['segment2']['diffHis'] = getDiffHistory(targetPair['segment2']['projPath'], targetPair['segment2']['filePath'], targetPair['segment2']['functionName'])
+    targetPair['segment2']['diffHis'] = getDiffHistory(targetPair['segment2']['projPath'], targetPair['segment2']['filePath'], targetPair['segment2']['defaultBranchName'])
     targetPair['segment2']['commitNum_fileModification'] = len(targetPair['segment2']['diffHis'])
     targetPair['segment2']['commitNum_functionIdendified'] = 0
     # diffHis1 = getDiffHistory(targetPair['segment1']['projPath'], targetPair['segment1']['filePath'], targetPair['segment1']['functionName'])

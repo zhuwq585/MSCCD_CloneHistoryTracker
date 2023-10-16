@@ -9,19 +9,6 @@ def getFileContent(file, startLine, endLine):
 
 def generateJSONForDVG( commitList, similarityList):
 
-    # res = {
-    #     "points" : [
-    #         {
-    #             "segment" : "1",
-    #             "commitId" : "1",
-    #             "indexInList" : 0   
-    #         }
-    #     ],
-    #     "links" : [ ["index1", "index2"] ]
-    # }
-
-    
-
     res = {
         "points" : [],  # older to newer
         "links" : []
@@ -51,35 +38,58 @@ if __name__ == "__main__":
     # cloneIndex  = sys.argv[3]
     
     taskId      = "11011"
-    detectionId = "1"
-    cloneIndex  = "26915"
+    detectionId = "3"
+    cloneIndex  = "10790"
     
     trackerResultSource = CLONETRACKER_PATH + "reports/" + taskId + "-" + detectionId + "-" + cloneIndex + "/result.json"
     outputFile = CLONETRACKER_PATH + "reports/" + taskId + "-" + detectionId + "-" + cloneIndex + "/report.html"
     trackerResult = ujson.loads(open(trackerResultSource,"r").read())
     
-    result = {
-        "segment1" : {
-            "projectName" : trackerResult["targetPair"]['segment1']['projectName'],
-            "filePath"    : trackerResult["targetPair"]['segment1']['filePath'],
-            "functionName": trackerResult["targetPair"]['segment1']['functionName'],
-            "defaultBranch" : trackerResult["targetPair"]['segment1']['defaultBranchName'],
-            "commitNum_fileModification" : trackerResult["targetPair"]['segment1']['commitNum_fileModification'],
-            "commitNum_functionIdendified" : trackerResult["targetPair"]['segment1']['commitNum_functionIdendified'],
-            "commitNum_functionModification" : trackerResult["targetPair"]['segment1']['commitNum_functionModification']
-        },
-        "segment2" : {
-            "projectName" : trackerResult["targetPair"]['segment2']['projectName'],
-            "filePath"    : trackerResult["targetPair"]['segment2']['filePath'],
-            "functionName": trackerResult["targetPair"]['segment2']['functionName'],
-            "defaultBranch" : trackerResult["targetPair"]['segment2']['defaultBranchName'],
-            "commitNum_fileModification" : trackerResult["targetPair"]['segment2']['commitNum_fileModification'],
-            "commitNum_functionIdendified" : trackerResult["targetPair"]['segment2']['commitNum_functionIdendified'],
-            "commitNum_functionModification" : trackerResult["targetPair"]['segment2']['commitNum_functionModification']
-        },    
-        "simiItems" : []
-        
-    }
+    if "functionName" in trackerResult["targetPair"]['segment1']:
+    
+        result = {
+            "segment1" : {
+                "projectName" : trackerResult["targetPair"]['segment1']['projectName'],
+                "filePath"    : trackerResult["targetPair"]['segment1']['filePath'],
+                "functionName": trackerResult["targetPair"]['segment1']['functionName'],
+                "defaultBranch" : trackerResult["targetPair"]['segment1']['defaultBranchName'],
+                "commitNum_fileModification" : trackerResult["targetPair"]['segment1']['commitNum_fileModification'],
+                "commitNum_functionIdendified" : trackerResult["targetPair"]['segment1']['commitNum_functionIdendified'],
+                "commitNum_functionModification" : trackerResult["targetPair"]['segment1']['commitNum_functionModification']
+            },
+            "segment2" : {
+                "projectName" : trackerResult["targetPair"]['segment2']['projectName'],
+                "filePath"    : trackerResult["targetPair"]['segment2']['filePath'],
+                "functionName": trackerResult["targetPair"]['segment2']['functionName'],
+                "defaultBranch" : trackerResult["targetPair"]['segment2']['defaultBranchName'],
+                "commitNum_fileModification" : trackerResult["targetPair"]['segment2']['commitNum_fileModification'],
+                "commitNum_functionIdendified" : trackerResult["targetPair"]['segment2']['commitNum_functionIdendified'],
+                "commitNum_functionModification" : trackerResult["targetPair"]['segment2']['commitNum_functionModification']
+            },    
+            "simiItems" : []
+            
+        }
+    else:
+        result = {
+            "segment1" : {
+                "projectName" : trackerResult["targetPair"]['segment1']['projectName'],
+                "filePath"    : trackerResult["targetPair"]['segment1']['filePath'],
+                "defaultBranch" : trackerResult["targetPair"]['segment1']['defaultBranchName'],
+                "commitNum_fileModification" : trackerResult["targetPair"]['segment1']['commitNum_fileModification'],
+                "commitNum_functionIdendified" : "",
+                "commitNum_functionModification" :""
+            },
+            "segment2" : {
+                "projectName" : trackerResult["targetPair"]['segment2']['projectName'],
+                "filePath"    : trackerResult["targetPair"]['segment2']['filePath'],
+                "defaultBranch" : trackerResult["targetPair"]['segment2']['defaultBranchName'],
+                "commitNum_fileModification" : trackerResult["targetPair"]['segment2']['commitNum_fileModification'],
+                "commitNum_functionIdendified" : "",
+                "commitNum_functionModification" :  ""
+            },    
+            "simiItems" : []
+            
+        }
     
     for simiItem_input_index in range(len(trackerResult["similarityList"])):
         

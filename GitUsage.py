@@ -81,6 +81,9 @@ def commitIdListFilterByFileDifferenceInLineRange(commitIdList, diffHistoryDict)
     else:
         return commitIdList
 
+
+   
+
 def getCommitIdListFromHistoryByDateOrder(diffHistoryDict, segmentId): 
     commitIdList = []
     for commitId in diffHistoryDict:
@@ -89,6 +92,16 @@ def getCommitIdListFromHistoryByDateOrder(diffHistoryDict, segmentId):
     
     return commitIdList 
     # return commitIdListFilterByFileDifferenceInLineRange(commitIdList, diffHistoryDict) # commitIdList[0] is the oldest commit id
+
+def getCommitIdListFromHistoryByDateOrder_fileExistense(diffHistoryDict, segmentId):
+    commitIdList = []
+    for commitId in diffHistoryDict:
+        if 'pathInCommit' in diffHistoryDict[commitId]:
+            commitIdList.append( (commitId, segmentId, diffHistoryDict[commitId]['date']) )
+    commitIdList.reverse()
+    
+    return commitIdList
+
 
 # an example that code provided by capilot is buggy
 # def transDiffHistoryToDict(diffHistory):
@@ -149,7 +162,7 @@ def compareDateInDiffHistoryDict(diffHistoryDict1, commitId1, diffHistoryDict2, 
         return False
         
 
-def getDiffHistory(projPath, filePath, functionName):
+def getDiffHistory(projPath, filePath, defaultBranchName):
     # cmd = "cd " + projPath + "; git log --pretty=format:\"%H\" -S \"" + functionName + "\" -- " + filePath
     filePath_relative = filePath.replace(projPath, "")
     if filePath_relative[0] == "/":
@@ -157,7 +170,7 @@ def getDiffHistory(projPath, filePath, functionName):
     
     # cmd = "cd " + projPath + "; git log -L:" + functionName + ":" + filePath_relative + " --no-patch"
     # cmd = "cd " + projPath + "; git log " + filePath_relative
-    cmd = "cd " + projPath + "; git log master " + filePath_relative
+    cmd = "cd " + projPath + "; git log " + defaultBranchName + " " + filePath_relative
     res = os.popen(cmd).readlines()
     return transDiffHistoryToDict(res)
 
@@ -180,6 +193,36 @@ def copyTargetFileToFolder(projPath, filePath, projName, functionName, commitId,
     os.popen(cmd).readlines()
         
     return targetFolder + "/" + commitId + extName
+
+
+def copyTargetFileToFilder_fileLevel(projPath, filePath, projName, commitId, targetFolder):
+    
+
+    
+    filePath_relative = filePath.replace(projPath, "")
+    if filePath_relative[0] == "/":
+        filePath_relative = filePath_relative[1:]
+    extName = getExtensionNameFromFilePath(filePath)  
+    
+    fileName = filePath_relative.split("/")[-1]  
+        
+    targetFolder = targetFolder + "/" + projName + "_" + fileName
+    if not os.path.exists(targetFolder):
+        os.mkdir(targetFolder)
+    
+    # convert targetFolder to absolute path
+    targetFolder = os.path.abspath(targetFolder)
+    
+    cmd = "cd " + projPath + "; git checkout " + commitId + "; cp " + filePath_relative + " " + targetFolder + "/" + commitId + extName
+    #execute the command cmd and wait for the result
+    os.popen(cmd).readlines()
+    
+    if os.path.exists(targetFolder + "/" + commitId + extName):        
+        return targetFolder + "/" + commitId + extName
+    else:
+        print("File not exists: " + targetFolder + "/" + commitId + extName)
+        return None
+
 
 def switchToHeadCommit(projPath, defaultBranchName):    
     # switch the target repository to head commit 

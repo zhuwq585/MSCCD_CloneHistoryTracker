@@ -22,15 +22,15 @@ public class ParserController {
                 return false;
             }
             CharStream input = CharStreams.fromFileName(filePath);
-            JavaScriptLexer lexer = new JavaScriptLexer(input);
+            CPP14Lexer lexer = new CPP14Lexer(input);
 
             CommonTokenStream tokens = new CommonTokenStream(lexer);
 
             tokens.getNumberOfOnChannelTokens();
 
-            JavaScriptParser parser = new JavaScriptParser(tokens);
+            CPP14Parser parser = new CPP14Parser(tokens);
 
-            ParseTree tree = parser.program();
+            ParseTree tree = parser.translationUnit();
             pTree = tree;
             lexicalUnits = tokens.getTokens();
         }catch (Exception e){ 
