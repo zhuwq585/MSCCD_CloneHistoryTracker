@@ -1,5 +1,10 @@
+/* body{
+    width: 1800px;
+    margin: 0 auto;
+} */
+
 .left, .right {
-    width: 49.8%;
+    width: 49%;
     display: inline-block;
     vertical-align: top;
 }
@@ -12,16 +17,16 @@
 
 #vectorCanvas{
     margin: 0 auto;
-    min-width: 300px;
+    /* min-width: 300px; */
 }
 
 .mleft, .mright {
-    width: 35%;
+    width: 25%;
     display: inline-block;
     vertical-align: top;
 }
 .mMiddle{
-    width: 29%;
+    width: 49%;
     display: inline-block;
     vertical-align: top;
     text-align: center;

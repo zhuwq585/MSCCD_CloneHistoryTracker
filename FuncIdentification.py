@@ -7,6 +7,102 @@ import re
 
 FunctionItemNameSet = {'method','function',"func"}
 
+
+def getAllFunctionItems(path, language):
+    if language in {"Java", "Go", "C"}:
+        return getAllFunctionItems_CTag(path, language)
+    elif language == "JavaScript":
+        return getAllFunctionItems_JavaScript(path)
+    elif language == "C++":
+        return getAllFunctionItems_Cpp(path)
+    
+def getAllFunctionItems_CTag(path, language):
+    res = {}
+    cmd = "ctags --fields=+ne --output-format=json " + path
+    
+    
+    if os.path.exists(path):
+        ctagRes = os.popen(cmd).readlines()
+        for tagLine in ctagRes:
+            ctagItem = ujson.loads(tagLine)
+            if ctagItem['kind'] in FunctionItemNameSet:
+                if 'end' in ctagItem:
+                    res[ctagItem['line']] = {
+                            ctagItem['end'] : {
+                                "name" : ctagItem['name'],
+                                "startLine" : ctagItem['line'],
+                                "endLine" : ctagItem['end'],
+                                "pattern" : ctagItem['pattern']
+                            }
+                        }
+                else:
+                    print("Error(getAllFunctionItems): ctagItem['end'] not found: " + path)
+        return res
+    else:
+        print("Error(getAllFunctionItems): file not found: " + path)
+        return None
+
+
+def getAllFunctionItems_JavaScript(path):
+    res = {}
+    cmd = "node JSFunctionExtraction.js " + path
+    jsFuncItemsSources = os.popen(cmd).readlines()
+    
+    for line in jsFuncItemsSources:
+        jsFuncItem = ujson.loads(line)
+        
+        ptn = ""
+        for param in jsFuncItem['params']:
+            ptn += param['type'] + "@@"
+        if len(ptn) == 0:
+            ptn = "--"
+
+            
+        res[jsFuncItem['startLine']] = {
+            jsFuncItem['endLine'] : {
+            "name" : jsFuncItem['name'],
+            "startLine" : jsFuncItem['startLine'],
+            "endLine" : jsFuncItem['endLine'],
+            "pattern" : ptn
+            }
+        }
+    
+    return res
+
+def getAllFunctionItems_Cpp(path):
+    res = {}
+    clang.cindex.Config.set_library_path("/opt/homebrew/opt/llvm/lib")
+    index = clang.cindex.Index.create()
+    translation_unit = index.parse(path)
+    for cursor in translation_unit.cursor.walk_preorder():
+        if cursor.kind == clang.cindex.CursorKind.CXX_METHOD or cursor.kind == clang.cindex.CursorKind.FUNCTION_DECL:
+            
+            file_path_cursor = cursor.extent.start.file.name
+            if file_path_cursor != path:
+                continue
+            
+            function_params_type = [p.type.spelling for p in cursor.get_arguments()]
+            function_name = cursor.displayname
+            if cursor.semantic_parent.kind == clang.cindex.CursorKind.CLASS_DECL:
+                class_name = cursor.semantic_parent.displayname
+            else:
+                class_name = "@NONE@"
+            
+            pattern = class_name + "@@" + "::".join(function_params_type)
+            
+            res[cursor.extent.start.line] = {
+                cursor.extent.end.line : {
+                "name" : function_name,
+                "startLine" : cursor.extent.start.line,
+                "endLine" : cursor.extent.end.line,
+                "pattern" : pattern
+                }
+            }
+    
+    return res
+
+
+
 def JavaPatternGeneration(str):
     
     pattern = re.split(r'[,\s]+', str.split("(")[1].split(")")[0])[0::2]
@@ -90,9 +186,9 @@ def getFunctionName_Ptn_JavaScript(path, startLine, endLine):
 
 def getFunctionPosition_JavaScript(path, functionName, patternString):
     cmd = "node JSFunctionExtraction.js " + path
-    if not os.path.exists(path):
-        # wait 1 second and try again
-        time.sleep(1)
+    # if not os.path.exists(path):
+    #     # wait 1 second and try again
+    #     time.sleep(1)
     
     if os.path.exists(path):
         jsFuncItemsSource = os.popen(cmd).readlines()
@@ -114,14 +210,17 @@ def getFunctionPosition_JavaScript(path, functionName, patternString):
         #     endLine = input("Please input end line: ")
         #     return int(startLine), int(endLine)
         return -1,-1
+    else:
+        print("Error(getFunctionPosition): file not found: " + path)
+        return -1, -1
 
 
-def getFunctionPosition_CTag(path, functionName, patternString, language):
+def getFunctionPosition_CTag(path, functionName, patternString, language, functionIdendified):
 
     cmd = "ctags --fields=+ne --output-format=json " + path
-    if not os.path.exists(path):
-        # wait 1 second and try again
-        time.sleep(1)
+    # if not os.path.exists(path):
+    #     # wait 1 second and try again
+    #     time.sleep(1)
     
     if os.path.exists(path):
         res = os.popen(cmd).readlines()
@@ -134,27 +233,28 @@ def getFunctionPosition_CTag(path, functionName, patternString, language):
             # else:
             cTagPattern = ctagItem['pattern']
                 
-            # if ctagItem['name'] == functionName and ctagItem['kind'] in FunctionItemNameSet and cTagPattern == patternString:
-            if ctagItem['name'] == functionName and ctagItem['kind'] in FunctionItemNameSet:
+            if ctagItem['name'] == functionName and ctagItem['kind'] in FunctionItemNameSet and cTagPattern == patternString:
+            # if ctagItem['name'] == functionName and ctagItem['kind'] in FunctionItemNameSet:
                 return ctagItem['line'], ctagItem['end']
         
         # an example that code provided by capilot is buggy
         # print("Cannot find function: " + functionName + " in file: " + path")
         
-        # print("Cannot find function: " + functionName + " in file: " + path)
-        # if input("Do you want to continue to input line number manually? (y/n)") != "n":
-        #     startLine = input("Please input start line: ")
-        #     endLine = input("Please input end line: ")
-        #     return int(startLine), int(endLine)
+        print("### Cannot find function: " + functionName + " in file: " + path)
+        if functionIdendified > 0:
+            if input("Function not found in a non-initial commit, maybe rename or retype. Do you want to manully check code base and input line number? (y/n)") != "n":
+                startLine = input("Please input start line: ")
+                endLine = input("Please input end line: ")
+                return int(startLine), int(endLine)
         return -1,-1    
     else:
         print("Error(getFunctionPosition): file not found: " + path)
         return None
 
 def getFunctionPosition_Cpp(path, functionName, patternString):
-    if not os.path.exists(path):
-        # wait 1 second and try again
-        time.sleep(1)
+    # if not os.path.exists(path):
+    #     # wait 1 second and try again
+    #     time.sleep(1)
     
     if os.path.exists(path):
         clang.cindex.Config.set_library_path("/opt/homebrew/opt/llvm/lib")
@@ -189,9 +289,9 @@ def getFunctionPosition_Cpp(path, functionName, patternString):
     else:
         print("Error(getFunctionPosition): file not found: " + path)
         return None
-def getFunctionPosition(path, functionName, patternString, language):
+def getFunctionPosition(path, functionName, patternString, language, functionIdendified):
     if language in {"Java", "Go", "C"}:
-        return getFunctionPosition_CTag(path, functionName, patternString, language)
+        return getFunctionPosition_CTag(path, functionName, patternString, language, functionIdendified)
     elif language == "JavaScript":
         return getFunctionPosition_JavaScript(path, functionName, patternString)
     elif language == "C++":

@@ -27,7 +27,7 @@ def getDefaultBranchName(projPath):
         if "HEAD branch" in line:
             return line.split(":")[1].strip()
     
-    return None
+    return "master"
     
 
 def ifFileDifferenceInLineRange(diffHistoryObj1, diffHistoryObj2):
@@ -170,7 +170,7 @@ def getDiffHistory(projPath, filePath, defaultBranchName):
     
     # cmd = "cd " + projPath + "; git log -L:" + functionName + ":" + filePath_relative + " --no-patch"
     # cmd = "cd " + projPath + "; git log " + filePath_relative
-    cmd = "cd " + projPath + "; git log " + defaultBranchName + " " + filePath_relative
+    cmd = "cd " + projPath + "; git log " + defaultBranchName + " -- " + filePath_relative
     res = os.popen(cmd).readlines()
     return transDiffHistoryToDict(res)
 
@@ -188,7 +188,7 @@ def copyTargetFileToFolder(projPath, filePath, projName, functionName, commitId,
     # convert targetFolder to absolute path
     targetFolder = os.path.abspath(targetFolder)
     
-    cmd = "cd " + projPath + "; git checkout " + commitId + "; cp " + filePath_relative + " " + targetFolder + "/" + commitId + extName
+    cmd = "cd " + projPath + "; git checkout -f " + commitId + "; cp " + filePath_relative + " " + targetFolder + "/" + commitId + extName
     #execute the command cmd and wait for the result
     os.popen(cmd).readlines()
         
@@ -213,7 +213,7 @@ def copyTargetFileToFilder_fileLevel(projPath, filePath, projName, commitId, tar
     # convert targetFolder to absolute path
     targetFolder = os.path.abspath(targetFolder)
     
-    cmd = "cd " + projPath + "; git checkout " + commitId + "; cp " + filePath_relative + " " + targetFolder + "/" + commitId + extName
+    cmd = "cd " + projPath + "; git checkout -f " + commitId + "; cp " + filePath_relative + " " + targetFolder + "/" + commitId + extName
     #execute the command cmd and wait for the result
     os.popen(cmd).readlines()
     
@@ -226,7 +226,7 @@ def copyTargetFileToFilder_fileLevel(projPath, filePath, projName, commitId, tar
 
 def switchToHeadCommit(projPath, defaultBranchName):    
     # switch the target repository to head commit 
-    cmd = "cd " + projPath + "; git checkout " + defaultBranchName
+    cmd = "cd " + projPath + "; git checkout -f " + defaultBranchName
     os.popen(cmd).readlines()
     # print(res)
     

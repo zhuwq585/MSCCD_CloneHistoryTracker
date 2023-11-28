@@ -15,7 +15,7 @@ def fileListGeneration(taskId):
     return res
 
 
-def cloneListGeneration(taskId, detectionId, fileListArr):
+def cloneListGeneration(taskId, detectionId):
     clonePath = MSCCD_PATH + "/tasks/task" + str(taskId) + "/detection" + str(detectionId) + "/pairs.file"
     res = []
     for cloneLine in open(clonePath, "r").readlines():
@@ -39,6 +39,9 @@ def tokenBagListGeneration(taskId):
         endLine   = int(lineArr[1])
         
         bag = {
+            "projectId" : projectId,
+            "fileId"    : fileId,
+            "bagId"     : bagId,
             "startLine" : startLine,
             "endLine"   : endLine,
             "tokenNum"  : int(splitTmp[6]),
@@ -54,3 +57,7 @@ def tokenBagListGeneration(taskId):
             print("err")
     
     return res
+
+def getConfigObj(taskId):
+    configPath = MSCCD_PATH + "/tasks/task" + str(taskId) + "/config.json"
+    return ujson.loads(open(configPath,"r").read())

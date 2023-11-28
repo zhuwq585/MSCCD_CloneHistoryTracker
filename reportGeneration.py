@@ -5,7 +5,8 @@ CLONETRACKER_PATH = "/Users/syu/workspace/MSCCD_CloneHistoryTracker/"
 
 def getFileContent(file, startLine, endLine):
     if os.path.exists(file):
-        return open(file,"r").readlines()[startLine-1:endLine]
+        res = open(file,"r").readlines()[startLine-1:endLine]
+        return res
 
 def generateJSONForDVG( commitList, similarityList):
 
@@ -25,6 +26,7 @@ def generateJSONForDVG( commitList, similarityList):
         for pointIndex in range(len(res['points'])):
             if res['points'][pointIndex]['commitId'] == simiItem['segment1']['commitId'] or res['points'][pointIndex]['commitId'] == simiItem['segment2']['commitId']:
                 linkItem.append(pointIndex)
+        linkItem.append(simiItem['similarity'][0])
         res['links'].append(linkItem)
 
             
@@ -33,16 +35,16 @@ def generateJSONForDVG( commitList, similarityList):
     return res
 
 if __name__ == "__main__":
-    # taskId      = sys.argv[1]
-    # detectionId = sys.argv[2]
-    # cloneIndex  = sys.argv[3]
+    taskId      = sys.argv[1]
+    detectionId = sys.argv[2]
+    cloneIndex  = sys.argv[3]
     
-    taskId      = "11011"
-    detectionId = "3"
-    cloneIndex  = "10790"
+    # taskId      = "11011"
+    # detectionId = "10"
+    # cloneIndex  = "31"
     
-    trackerResultSource = CLONETRACKER_PATH + "reports/" + taskId + "-" + detectionId + "-" + cloneIndex + "/result.json"
-    outputFile = CLONETRACKER_PATH + "reports/" + taskId + "-" + detectionId + "-" + cloneIndex + "/report.html"
+    trackerResultSource = CLONETRACKER_PATH + "reports/" + taskId + "-" + detectionId + "/" + cloneIndex + "/result.json"
+    outputFile = CLONETRACKER_PATH + "reports/" + taskId + "-" + detectionId + "/" + cloneIndex + "/report.html"
     trackerResult = ujson.loads(open(trackerResultSource,"r").read())
     
     if "functionName" in trackerResult["targetPair"]['segment1']:
@@ -66,7 +68,9 @@ if __name__ == "__main__":
                 "commitNum_functionIdendified" : trackerResult["targetPair"]['segment2']['commitNum_functionIdendified'],
                 "commitNum_functionModification" : trackerResult["targetPair"]['segment2']['commitNum_functionModification']
             },    
-            "simiItems" : []
+            "simiItems" : [],
+            "language": trackerResult["targetPair"]['language']
+
             
         }
     else:
@@ -87,7 +91,8 @@ if __name__ == "__main__":
                 "commitNum_functionIdendified" : "",
                 "commitNum_functionModification" :  ""
             },    
-            "simiItems" : []
+            "simiItems" : [],
+            "language": trackerResult["targetPair"]['language']
             
         }
     

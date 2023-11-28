@@ -2,11 +2,12 @@
     <head>
         <title></title>
 
-        <link rel="stylesheet" href="../../templete/style.css">
+        <link rel="stylesheet" href="../../../templete/style.css">
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/default.min.css">
 
     </head>
     <body>
+        
         <div id="segmentInfo">
             <div class="mleft">
                 <h2>Segment1</h2>
@@ -35,7 +36,7 @@
                 </div>
             </div>
             <div class="mMiddle">
-                <canvas id="vectorCanvas" height="200px"></canvas>
+                <canvas id="vectorCanvas" height="200px" width="500px"></canvas>
             </div>
             
 
@@ -74,13 +75,13 @@
             <div class="diff">
                 <div class="left">
                     {% if simiItem.reasonSegment == "segment1" %}
-                    <pre><code>{{simiItem.diffContent}}</code></pre>
+                    <pre><code class="language-diff" >{{simiItem.diffContent}}</code></pre>
                     {% endif %}
                 </div>
 
                 <div class="right">
                     {% if simiItem.reasonSegment == "segment2" %}
-                    <pre><code>{{simiItem.diffContent}}</code></pre>
+                    <pre><code class="language-diff">{{simiItem.diffContent}}</code></pre>
                     {% endif %}
                 </div>
             </div>
@@ -118,9 +119,7 @@
                     </div>
                     <div class="code">
                         <pre>
-                            <code>
-                            {{simiItem.segment1.code}}}
-                            </code>
+                            <code class="language-{{report.language}}">{{simiItem.segment1.code}}</code>
                         </pre>
                     </div>
                 </div>
@@ -141,9 +140,7 @@
                     </div>
                     <div class="code">
                         <pre>
-                            <code>
-                            {{simiItem.segment2.code}}
-                            </code>
+                            <code class="language-{{report.language}}">{{simiItem.segment2.code}}</code>
                         </pre>
                     </div>
                 </div>
@@ -168,6 +165,9 @@
         const canvas = document.getElementById("vectorCanvas");
         const ctx = canvas.getContext("2d");
 
+
+
+
         const canvasHeight = canvas.height;
         const canvasWidth = canvas.width;
 
@@ -177,9 +177,14 @@
         const margin_top = 30
         const margin_left_right = 30
         const arc_size = 5
+        const similarityLine = 200
+        const similarityLine_marginLeft = 20
 
         const lineWidth = 2
+        //const gap_line = canvasWidth - similarityLine - similarityLine_marginLeft - 2 * margin_left_right - 2 * lineWidth
         const gap_line = canvasWidth - 2 * margin_left_right - 2 * lineWidth
+
+
         const X2 = X1 + gap_line;
         //const gap_size_point = 20
         const gap_num_line = DVGData.points.length  + 1
@@ -247,11 +252,25 @@
             ctx.fill();
         }
 
-        // 连接点
+        // similarity line 
+        //const similarityLine_startX = margin_left_right + lineWidth * 2 + gap_line + similarityLine_marginLeft;
+        //.beginPath();
+        //ctx.moveTo(similarityLine_startX, margin_top + length_line);
+        //ctx.lineTo(similarityLine_startX + similarityLine, margin_top + length_line);
+
+
+        // 连接点 // linkArr[2] : similarity
         ctx.beginPath();
         DVGData.links.forEach(linkArr => {
             ctx.moveTo(DVGData.points[linkArr[0]].x, DVGData.points[linkArr[0]].y);
             ctx.lineTo(DVGData.points[linkArr[1]].x, DVGData.points[linkArr[1]].y);
+
+            const y = (DVGData.points[linkArr[0]].y + DVGData.points[linkArr[1]].y) / 2
+            const x = margin_left_right + lineWidth + gap_line / 2
+            ctx.fillText(parseFloat(linkArr[2]).toFixed(2), x, y); 
+            //ctx.moveTo(similarityLine_startX, y);
+            //ctx.lineTo(similarityLine_startX + linkArr[2] * similarityLine.toFixed(2), y);
+
         });
         ctx.lineWidth = lineWidth;
         ctx.stroke();

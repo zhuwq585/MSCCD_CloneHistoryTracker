@@ -1,7 +1,7 @@
 ## input: taskId, detectionId, cloneIndex of target clone pair in a MSCCD detection task.
 ## output: clone history of the target clone pair in the MSCCD detection task.
 
-import sys,os,ujson
+import sys,os,ujson, random
 from MSCCDTaskData import *
 from FuncIdentification import *
 from GitUsage import *
@@ -20,7 +20,7 @@ def similarityCalculation(filePath1, startLine1, endLine1, filePath2, startLine2
         return None, None
     
     
-def generateSimilarityCalItem(olderCommitItem, newerCommitItem, reasonSegment):
+def generateSimilarityCalItem(olderCommitItem, newerCommitItem, reasonSegment, targetPair, keywordsList):
     if olderCommitItem[1] == "segment1": 
         res = {
             "segment1" : {
@@ -56,35 +56,15 @@ def generateSimilarityCalItem(olderCommitItem, newerCommitItem, reasonSegment):
     return res
 
 
-if __name__ == "__main__":
-    
-    # step1: get info from task.obj in MSCCD task folder
-    
-    # taskId      = sys.argv[1]
-    # detectionId = sys.argv[2]
-    # cloneIndex  = sys.argv[3]
-    # keywordsList = sys.argv[4]
-    # language = sys.argv[5]
-    
-    ### for test
-    taskId      = "11009"
-    detectionId = "1"
-    cloneIndex  = 513
-    keywordsList = "/Users/syu/workspace/MSCCD/grammarDefinations/C/C.reserved"
-    language = "C" #{"Java", "Go", "C","JavaScript","C++"}
-    # "/Users/syu/workspace/MSCCD/grammarDefinations/Java9/Java9.reserved"
-    
-    workFolder = './reports/' + taskId + "-" + detectionId + "-" + str(cloneIndex) + "/"
-    if not os.path.exists(workFolder):
-        os.mkdir(workFolder)    
-    
-    taskObjPath = MSCCD_PATH + "tasks/task" + taskId + "/taskData.obj"
-    taskObj     = ujson.load(open(taskObjPath, "r"))
-    
-    fileList     = fileListGeneration(taskId)
-    cloneList    = cloneListGeneration(taskId, detectionId, fileList)
-    tokenBagList = tokenBagListGeneration(taskId)
+def cloneTracker(fileList, cloneList, tokenBagList, taskObj, cloneIndex, language, keywordsListPath):
     projList     = taskObj['configObj']['inputProject']
+    workFolder_detection = './reports/' + taskId + "-" + detectionId 
+    if not os.path.exists(workFolder_detection):
+        os.mkdir(workFolder_detection)  
+    workFolder = workFolder_detection + "/" + str(cloneIndex) + "/"
+    if not os.path.exists(workFolder):
+        os.mkdir(workFolder)
+    
     
     targetPair = {
         "segment1":{
@@ -120,9 +100,13 @@ if __name__ == "__main__":
     
     
     # step3: get diff history using git
-    targetPair['segment1']['diffHis'] = getDiffHistory(targetPair['segment1']['projPath'], targetPair['segment1']['filePath'])
-    targetPair['segment2']['diffHis'] = getDiffHistory(targetPair['segment2']['projPath'], targetPair['segment2']['filePath'])
-
+    targetPair['segment1']['diffHis'] = getDiffHistory(targetPair['segment1']['projPath'], targetPair['segment1']['filePath'], targetPair['segment1']['defaultBranchName'])
+    targetPair['segment1']['commitNum_fileModification'] = len(targetPair['segment1']['diffHis'])
+    targetPair['segment1']['commitNum_functionIdendified'] = 0
+    
+    targetPair['segment2']['diffHis'] = getDiffHistory(targetPair['segment2']['projPath'], targetPair['segment2']['filePath'], targetPair['segment2']['defaultBranchName'])
+    targetPair['segment2']['commitNum_fileModification'] = len(targetPair['segment2']['diffHis'])
+    targetPair['segment2']['commitNum_functionIdendified'] = 0
     
     # step4: copy target file in each target commit
     # step5: get position of target function in each target file using ctags
@@ -165,14 +149,16 @@ if __name__ == "__main__":
     commitList1 = commitIdListFilterByFileDifferenceInLineRange(getCommitIdListFromHistoryByDateOrder_fileExistense(targetPair['segment1']['diffHis'],"segment1"), targetPair['segment1']['diffHis'])
     commitList2 = commitIdListFilterByFileDifferenceInLineRange(getCommitIdListFromHistoryByDateOrder_fileExistense(targetPair['segment2']['diffHis'],"segment2"), targetPair['segment2']['diffHis'])
     
-    targetPair['segment1']['commitNum_fileModification'] = len(commitList1)
-    targetPair['segment2']['commitNum_fileModification'] = len(commitList2)
+    targetPair['segment1']['commitNum_functionModification'] = len(commitList1)
+    targetPair['segment2']['commitNum_functionModification'] = len(commitList2)
     
     commitList  = mergeTwoCommitIdListByDateOrder(commitList1, commitList2)
+    negative_search_num = 0
+
 
     if len(commitList) == 2:
         print("No modification found in both functions.")
-        similarityList.append(generateSimilarityCalItem(commitList[0], commitList[1], commitList[1][1]))
+        similarityList.append(generateSimilarityCalItem(commitList[0], commitList[1], commitList[1][1], targetPair, keywordsListPath))
         
         
         
@@ -189,7 +175,7 @@ if __name__ == "__main__":
             
             if targetCursor >= 0: # got target by positive search (new -> old)
                 
-                similarityList.insert(0, generateSimilarityCalItem(commitList[targetCursor], commitList[cursor], commitList[cursor][1]))
+                similarityList.insert(0, generateSimilarityCalItem(commitList[targetCursor], commitList[cursor], commitList[cursor][1], targetPair, keywordsListPath))
 
             else: # no older commit at the other side, negative search (old -> new) to find the cloest one
                 targetCursor = cursor + 1
@@ -200,9 +186,11 @@ if __name__ == "__main__":
                 
                 if cursor + 1 == targetCursor: # this pair is already calculated but reasonSegment does not have diffContent (because it is the first commit) # update it by this one
                     similarityList.pop(0)
-                    similarityList.insert(0, generateSimilarityCalItem(commitList[cursor], commitList[targetCursor], commitList[cursor][1]))
+                    similarityList.insert(0, generateSimilarityCalItem(commitList[cursor], commitList[targetCursor], commitList[cursor][1], targetPair, keywordsListPath))
                 else:
-                    similarityList.insert(0, generateSimilarityCalItem(commitList[cursor], commitList[targetCursor], commitList[cursor][1]))
+                    similarityList.insert(0, generateSimilarityCalItem(commitList[cursor], commitList[targetCursor], commitList[cursor][1], targetPair, keywordsListPath))
+                    negative_search_num += 1
+
             
             cursor = cursor - 1
                     
@@ -214,7 +202,8 @@ if __name__ == "__main__":
         "cloneIndex": cloneIndex,
         "targetPair" : targetPair,
         "similarityList" : similarityList,
-        "commitList" : commitList
+        "commitList" : commitList,
+        "negative_search_num" : negative_search_num
     }
     
     open(workFolder + "result.json", "w").write(ujson.dumps(result, indent=2))
@@ -224,4 +213,77 @@ if __name__ == "__main__":
     
     switchToHeadCommit(targetPair['segment1']['projPath'], targetPair['segment1']['defaultBranchName'])
     switchToHeadCommit(targetPair['segment2']['projPath'], targetPair['segment2']['defaultBranchName'])
+
+if __name__ == "__main__":
+    
+    # step1: get info from task.obj in MSCCD task folder
+    
+    # taskId      = sys.argv[1]
+    # detectionId = sys.argv[2]
+    # cloneIndex  = sys.argv[3]
+    # language = sys.argv[4]
+    
+    ### for test
+    taskId      = "11011"
+    detectionId = "11"
+    cloneIndex  = -1
+    language = "Java" #{"Java", "Go", "C","JavaScript","C++"}
+    # "/Users/syu/workspace/MSCCD/grammarDefinations/Java9/Java9.reserved"
+    
+    keywordListDict = {
+        "Java" : "/Users/syu/workspace/MSCCD/grammarDefinations/Java9/Java9.reserved",
+        "Go" : "/Users/syu/workspace/MSCCD/grammarDefinations/Go/Go.reserved",
+        "C" : "/Users/syu/workspace/MSCCD/grammarDefinations/C/C.reserved",
+        "JavaScript" : "/Users/syu/workspace/MSCCD/grammarDefinations/JavaScript/JavaScript.reserved",
+        "C++" : "/Users/syu/workspace/MSCCD/grammarDefinations/cpp/CPP14.reserved"
+    }
+    
+    if language in keywordListDict:
+        keywordsListPath = keywordListDict[language]
+    else:
+        raise Exception("Language not supported.")
+    
+    
+    # workFolder = './reports/' + taskId + "-" + detectionId + "-" + str(cloneIndex) + "/"
+    # if not os.path.exists(workFolder):
+    #     os.mkdir(workFolder)    
+    
+    taskObjPath = MSCCD_PATH + "tasks/task" + taskId + "/taskData.obj"
+    taskObj     = ujson.load(open(taskObjPath, "r"))
+    
+    fileList     = fileListGeneration(taskId)
+    cloneList    = cloneListGeneration(taskId, detectionId)
+    tokenBagList = tokenBagListGeneration(taskId)
+    projList     = taskObj['configObj']['inputProject']
+    
+    if cloneIndex < 0:
+        calculateIndexList = []
+        
+        cloneIndexList_crossProj = []
+        for cloneItemIndex in range(len(cloneList)):
+            cloneItem = cloneList[cloneItemIndex]
+            if cloneItem[0][0] != cloneItem[1][0]:
+                cloneIndexList_crossProj.append(cloneItemIndex)
+        
+        cloneListSampled = None
+        if cloneIndex < -1:
+            cloneListSampled = random.sample(cloneIndexList_crossProj, -cloneIndex-1)
+        else:
+            cloneListSampled = cloneIndexList_crossProj
+            
+        
+        for index in cloneListSampled:
+            cloneTracker(fileList, cloneList, tokenBagList, taskObj, index, language, keywordsListPath)
+            cmd = "python3 reportGeneration.py " + taskId + " " + detectionId + " " + str(index)
+            os.system(cmd)
+            calculateIndexList.append(index)
+        
+        
+        
+    else:
+        
+        cloneTracker(fileList, cloneList, tokenBagList, taskObj, cloneIndex, language, keywordsListPath)
+        cmd = "python3 reportGeneration.py " + taskId + " " + detectionId + " " + str(cloneIndex)
+        os.system(cmd)
+    
     

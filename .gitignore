@@ -3,3 +3,5 @@ reports/*
 .vscode
 .snapshots
 __pycache__
+*.env
+ChatGPT_archive/*
