@@ -235,16 +235,16 @@ if __name__ == "__main__":
     
     # step1: get info from task.obj in MSCCD task folder
     
-    # taskId      = sys.argv[1]
-    # detectionId = sys.argv[2]
-    # cloneIndex  = int(sys.argv[3])
-    # language = sys.argv[4]
+    taskId      = sys.argv[1]
+    detectionId = sys.argv[2]
+    cloneIndex  = int(sys.argv[3])
+    language = sys.argv[4]
     
     ### for test
-    taskId      = "11008"
-    detectionId = "10"
-    cloneIndex  = 13
-    language = "JavaScript" #{"Java", "Go", "C","JavaScript","C++"}
+    # taskId      = "11006"
+    # detectionId = "10"
+    # cloneIndex  = 13358
+    # language = "Go"  #{"Java", "Go", "C","JavaScript","C++"}
     # "/Users/syu/workspace/MSCCD/grammarDefinations/Java9/Java9.reserved"
     
     keywordListDict = {
@@ -291,7 +291,7 @@ if __name__ == "__main__":
             cloneTracker(fileList, cloneList, tokenBagList, taskObj, index, language, keywordsListPath)
             cmd = "python3 reportGeneration.py " + taskId + " " + detectionId + " " + str(index)
             os.system(cmd)
-            calculateIndexLst.append(cloneIndex)
+            calculateIndexLst.append(index)
         
         print(calculateIndexLst) 
     else:

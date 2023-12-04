@@ -5,3 +5,4 @@ reports/*
 __pycache__
 *.env
 ChatGPT_archive/*
+__pycache__/*
