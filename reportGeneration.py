@@ -5,8 +5,15 @@ CLONETRACKER_PATH = "/Users/syu/workspace/MSCCD_CloneHistoryTracker/"
 
 def getFileContent(file, startLine, endLine):
     if os.path.exists(file):
-        res = open(file,"r").readlines()[startLine-1:endLine]
-        return res
+        fileLines = open(file,"r").readlines()
+        
+        if startLine < 0:
+            if len(fileLines) == 1:
+                return fileLines[0]
+            else:
+                return "Target function not found in this commit."
+        else:
+            return fileLines[startLine-1:endLine]
 
 def generateJSONForDVG( commitList, similarityList):
 

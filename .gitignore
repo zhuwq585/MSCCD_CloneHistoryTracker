@@ -6,3 +6,4 @@ __pycache__
 *.env
 ChatGPT_archive/*
 __pycache__/*
+__pycache__

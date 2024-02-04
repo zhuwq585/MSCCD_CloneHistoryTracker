@@ -186,6 +186,7 @@ def copyTargetFileToFolder(projPath, filePath, projName, functionName, commitId,
     filePath_relative = filePath.replace(projPath, "")
     if filePath_relative[0] == "/":
         filePath_relative = filePath_relative[1:]
+    
     extName = getExtensionNameFromFilePath(filePath)    
         
     targetFolder = targetFolder + "/" + projName + "_" + functionName
@@ -194,10 +195,18 @@ def copyTargetFileToFolder(projPath, filePath, projName, functionName, commitId,
     # convert targetFolder to absolute path
     targetFolder = os.path.abspath(targetFolder)
     
+    
+    
     cmd = "cd " + projPath + "; git checkout -f " + commitId + "; cp " + filePath_relative + " " + targetFolder + "/" + commitId + extName
     #execute the command cmd and wait for the result
-    os.popen(cmd).readlines()
-        
+    res = os.popen(cmd).read()
+    
+    if "No such file or directory" in res:
+        print("Target file don't exists in commit" + str(commitId))
+
+        with open(targetFolder + "/" + commitId + extName, "w") as f:
+            f.write("Corresponding file does not exist in this commit.")
+            
     return targetFolder + "/" + commitId + extName
 
 

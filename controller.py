@@ -13,11 +13,16 @@ MSCCD_PATH = "/Users/syu/workspace/MSCCD/"
 
 
 def similarityCalculation(filePath1, startLine1, endLine1, filePath2, startLine2, endLine2, keywordsListPath, grammarName ):
+    if startLine1 == -1 or startLine2 == -1 or endLine1 == -1 or endLine2 == -1:
+        return (0,0)
+    
     cmd = "java -jar Calculators/" + grammarName + ".jar " + filePath1 + " " + str(startLine1) + " " + str(endLine1) + " " + filePath2 + " " + str(startLine2) + " " + str(endLine2) + " " + keywordsListPath
+    print(cmd)
     res = os.popen(cmd).readlines()[0].split(",")
     if len(res) == 2:
         return (float(res[0]), float(res[1]))
     else:
+        print(res)
         return None, None
     
 def generateSimilarityCalItem(olderCommitItem, newerCommitItem, reasonSegment, targetPair, keywordsList):
@@ -64,6 +69,25 @@ def generateSimilarityCalItem(olderCommitItem, newerCommitItem, reasonSegment, t
             "similarity" : similarityCalculation(targetPair[olderCommitItem[1]]['diffHis'][olderCommitItem[0]]['pathInCommit'], targetPair[olderCommitItem[1]]['diffHis'][olderCommitItem[0]]['startLine'], targetPair[olderCommitItem[1]]['diffHis'][olderCommitItem[0]]['endLine'], targetPair[newerCommitItem[1]]['diffHis'][newerCommitItem[0]]['pathInCommit'], targetPair[newerCommitItem[1]]['diffHis'][newerCommitItem[0]]['startLine'], targetPair[newerCommitItem[1]]['diffHis'][newerCommitItem[0]]['endLine'], keywordsList, targetPair['language'])
         }
     return res
+
+def copyTargetFile_functionIdentification(segmentName, targetPair, workFolder): # "segment1" or "segment2"
+    for commitIdObj in getCommitIdListFromHistoryByDateOrder(targetPair[segmentName]['diffHis'], "segment1"):
+            
+        pathInCommit = copyTargetFileToFolder(targetPair[segmentName]['projPath'], targetPair[segmentName]['filePath'], targetPair[segmentName]['projectName'], targetPair[segmentName]['functionName'], commitIdObj[0], workFolder)
+        
+
+        try:
+            startLine,endLine = getFunctionPosition(pathInCommit, targetPair[segmentName]['functionName'], targetPair[segmentName]['pattern'], language, targetPair[segmentName]['commitNum_functionIdendified'])
+        except TypeError:
+            startLine = -1
+            endLine = -1
+        
+        if startLine >= 0 and endLine >= 0:
+            targetPair[segmentName]['commitNum_functionIdendified'] += 1
+            
+        targetPair[segmentName]['diffHis'][commitIdObj[0]]['startLine'] = startLine
+        targetPair[segmentName]['diffHis'][commitIdObj[0]]['endLine'] = endLine
+        targetPair[segmentName]['diffHis'][commitIdObj[0]]['pathInCommit'] = pathInCommit
 
 
 def cloneTracker(fileList, cloneList, tokenBagList, taskObj, cloneIndex, language, keywordsListPath):
@@ -119,41 +143,44 @@ def cloneTracker(fileList, cloneList, tokenBagList, taskObj, cloneIndex, languag
     # step4: copy target file in each target commit
     # step5: get position of target function in each target file using ctags
 
-    for commitIdObj in getCommitIdListFromHistoryByDateOrder(targetPair['segment1']['diffHis'], "segment1"):
-        pathInCommit = copyTargetFileToFolder(targetPair['segment1']['projPath'], targetPair['segment1']['filePath'], targetPair['segment1']['projectName'], targetPair['segment1']['functionName'], commitIdObj[0], workFolder)
+    copyTargetFile_functionIdentification("segment1", targetPair, workFolder)
+    copyTargetFile_functionIdentification("segment2", targetPair, workFolder)
+    # for commitIdObj in getCommitIdListFromHistoryByDateOrder(targetPair['segment1']['diffHis'], "segment1"):
         
+    #     pathInCommit = copyTargetFileToFolder(targetPair['segment1']['projPath'], targetPair['segment1']['filePath'], targetPair['segment1']['projectName'], targetPair['segment1']['functionName'], commitIdObj[0], workFolder)
         
+    #     # if pathInCommit == None:
         
-        # try:
-        startLine,endLine = getFunctionPosition(pathInCommit, targetPair['segment1']['functionName'], targetPair['segment1']['pattern'], language, targetPair['segment1']['commitNum_functionIdendified'])
-        # except TypeError:
-        #     print("Error: " + pathInCommit + " " + targetPair['segment1']['functionName'] + " " + targetPair['segment1']['pattern'])
-        #     startLine = -1
-        #     endLine = -1
+    #     try:
+    #         startLine,endLine = getFunctionPosition(pathInCommit, targetPair['segment1']['functionName'], targetPair['segment1']['pattern'], language, targetPair['segment1']['commitNum_functionIdendified'])
+    #     except TypeError:
+    #         print("Error: " + pathInCommit + " " + targetPair['segment1']['functionName'] + " " + targetPair['segment1']['pattern'])
+    #         startLine = -1
+    #         endLine = -1
         
-        if startLine >= 0 and endLine >= 0:
-            targetPair['segment1']['commitNum_functionIdendified'] += 1
-        targetPair['segment1']['diffHis'][commitIdObj[0]]['startLine'] = startLine
-        targetPair['segment1']['diffHis'][commitIdObj[0]]['endLine'] = endLine
-        targetPair['segment1']['diffHis'][commitIdObj[0]]['pathInCommit'] = pathInCommit
+    #     if startLine >= 0 and endLine >= 0:
+    #         targetPair['segment1']['commitNum_functionIdendified'] += 1
+    #     targetPair['segment1']['diffHis'][commitIdObj[0]]['startLine'] = startLine
+    #     targetPair['segment1']['diffHis'][commitIdObj[0]]['endLine'] = endLine
+    #     targetPair['segment1']['diffHis'][commitIdObj[0]]['pathInCommit'] = pathInCommit
     
     
     
-    for commitIdObj in getCommitIdListFromHistoryByDateOrder(targetPair['segment2']['diffHis'],"segment2"):
-        pathInCommit = copyTargetFileToFolder(targetPair['segment2']['projPath'], targetPair['segment2']['filePath'], targetPair['segment2']['projectName'], targetPair['segment2']['functionName'], commitIdObj[0], workFolder)
+    # for commitIdObj in getCommitIdListFromHistoryByDateOrder(targetPair['segment2']['diffHis'],"segment2"):
+    #     pathInCommit = copyTargetFileToFolder(targetPair['segment2']['projPath'], targetPair['segment2']['filePath'], targetPair['segment2']['projectName'], targetPair['segment2']['functionName'], commitIdObj[0], workFolder)
 
-        # try:
-        startLine,endLine = getFunctionPosition(pathInCommit, targetPair['segment2']['functionName'], targetPair['segment2']['pattern'],language, targetPair['segment2']['commitNum_functionIdendified'])
-        # except TypeError:
-        #     print("Error: Can not find function position" + pathInCommit + " " + targetPair['segment2']['functionName'] + " " + targetPair['segment2']['pattern'])
-        #     startLine = -1
-        #     endLine = -1
+    #     try:
+    #         startLine,endLine = getFunctionPosition(pathInCommit, targetPair['segment2']['functionName'], targetPair['segment2']['pattern'],language, targetPair['segment2']['commitNum_functionIdendified'])
+    #     except TypeError:
+    #         print("Error: Can not find function position" + pathInCommit + " " + targetPair['segment2']['functionName'] + " " + targetPair['segment2']['pattern'])
+    #         startLine = -1
+    #         endLine = -1
             
-        if startLine >= 0 and endLine >= 0:
-            targetPair['segment2']['commitNum_functionIdendified'] += 1
-        targetPair['segment2']['diffHis'][commitIdObj[0]]['startLine'] = startLine
-        targetPair['segment2']['diffHis'][commitIdObj[0]]['endLine'] = endLine
-        targetPair['segment2']['diffHis'][commitIdObj[0]]['pathInCommit'] = pathInCommit
+    #     if startLine >= 0 and endLine >= 0:
+    #         targetPair['segment2']['commitNum_functionIdendified'] += 1
+    #     targetPair['segment2']['diffHis'][commitIdObj[0]]['startLine'] = startLine
+    #     targetPair['segment2']['diffHis'][commitIdObj[0]]['endLine'] = endLine
+    #     targetPair['segment2']['diffHis'][commitIdObj[0]]['pathInCommit'] = pathInCommit
    
 
     
@@ -163,8 +190,10 @@ def cloneTracker(fileList, cloneList, tokenBagList, taskObj, cloneIndex, languag
     commitList1 = commitIdListFilterByFileDifferenceInLineRange(getCommitIdListFromHistoryByDateOrder(targetPair['segment1']['diffHis'],"segment1"), targetPair['segment1']['diffHis']) 
     commitList2 = commitIdListFilterByFileDifferenceInLineRange(getCommitIdListFromHistoryByDateOrder(targetPair['segment2']['diffHis'],"segment2"), targetPair['segment2']['diffHis']) 
     
+    
     targetPair['segment1']['commitNum_functionModification'] = len(commitList1)
     targetPair['segment2']['commitNum_functionModification'] = len(commitList2)
+    
     
     commitList  = mergeTwoCommitIdListByDateOrder(commitList1, commitList2)
     negative_search_num = 0
@@ -235,16 +264,16 @@ if __name__ == "__main__":
     
     # step1: get info from task.obj in MSCCD task folder
     
-    taskId      = sys.argv[1]
-    detectionId = sys.argv[2]
-    cloneIndex  = int(sys.argv[3])
-    language = sys.argv[4]
+    # taskId      = sys.argv[1]
+    # detectionId = sys.argv[2]
+    # cloneIndex  = int(sys.argv[3])
+    # language = sys.argv[4]
     
     ### for test
-    # taskId      = "11006"
-    # detectionId = "10"
-    # cloneIndex  = 13358
-    # language = "Go"  #{"Java", "Go", "C","JavaScript","C++"}
+    taskId      = "20021"
+    detectionId = "11"
+    cloneIndex  = 685
+    language = "C++"  #{"Java", "Go", "C","JavaScript","C++"}
     # "/Users/syu/workspace/MSCCD/grammarDefinations/Java9/Java9.reserved"
     
     keywordListDict = {
@@ -252,7 +281,7 @@ if __name__ == "__main__":
         "Go" : "/Users/syu/workspace/MSCCD/grammarDefinations/Go/Go.reserved",
         "C" : "/Users/syu/workspace/MSCCD/grammarDefinations/C/C.reserved",
         "JavaScript" : "/Users/syu/workspace/MSCCD/grammarDefinations/JavaScript/JavaScript.reserved",
-        "C++" : "/Users/syu/workspace/MSCCD/grammarDefinations/cpp/CPP14.reserved"
+        "C++" : "/Users/syu/workspace/MSCCD/grammarDefinations/CPP14/CPP14.reserved"
     }
     
     if language in keywordListDict:

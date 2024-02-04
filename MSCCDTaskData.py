@@ -1,3 +1,18 @@
+####
+# author: zhuwq585
+# This API is used to get the data of MSCCD task.
+#  - fileListGeneration(taskId)
+#    - return a list of project, each project is a list of file path
+#  - cloneListGeneration(taskId, detectionId)
+#    - return a list of clone pair, each clone pair is a list of clone class
+#  - tokenBagListGeneration(taskId)
+#    - return a list of project, each project is a list of file, each file is a list of token bag
+#  - getConfigObj(taskId)
+#    - return a dict of config.json
+####
+
+
+
 import ujson
 MSCCD_PATH = "/Users/syu/workspace/MSCCD/"
 

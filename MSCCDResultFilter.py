@@ -1,3 +1,17 @@
+####
+# author: zhuwq585
+# This script is to filter the clone pairs of MSCCD task. And then generate
+# Parameters:
+#  - taskId: the id of MSCCD task
+#  - detectionId: the id of detection result
+#  - newDetectionId: the id of new detection result. This script will generate a new detection result folder named "detection" + newDetectionId
+#  - granularity: the granularity of clone pair. It can be "file" or "function"
+#   - "file": the granularity of clone pair is file
+#   - "function": the granularity of clone pair is function. This script will use FuncIdentification.py to try to extract functions from source code.
+####
+
+
+
 import MSCCDTaskData
 import FuncIdentification
 import ujson, sys, os
@@ -26,14 +40,15 @@ def funcExtractor(language):
             
             # compare extracted functions with token bags to get the token bags presenting functions using start line and end line
             
-            for tokenBag in tokenBagList[projectId][fileId]:
-                notationLine = 0
-                while notationLine <= notationLine_max:
-                    if tokenBag['startLine'] - notationLine in allFuncs:
-                        if tokenBag['endLine'] in allFuncs[tokenBag['startLine'] - notationLine]:
-                            res.append((tokenBag, allFuncs[tokenBag['startLine'] - notationLine][tokenBag['endLine']]["name"]))
-                            break
-                    notationLine += 1
+            if allFuncs != None:
+                for tokenBag in tokenBagList[projectId][fileId]:
+                    notationLine = 0
+                    while notationLine <= notationLine_max:
+                        if tokenBag['startLine'] - notationLine in allFuncs:
+                            if tokenBag['endLine'] in allFuncs[tokenBag['startLine'] - notationLine]:
+                                res.append((tokenBag, allFuncs[tokenBag['startLine'] - notationLine][tokenBag['endLine']]["name"]))
+                                break
+                        notationLine += 1
                 
     return res
 
@@ -103,6 +118,16 @@ def ifBagInDict(bagArr, bagDict):
                 return True
     return False
 
+def generateInfoFile(newDetectionPath, taskId, detectionId, granularity, language, cloneOrigin):
+    outputFilePath = newDetectionPath + "/info.txt"
+    infoText = "This is a filtered detection result of MSCCD task " + taskId + " detection " + detectionId + ".\n"
+    infoText += "Granularity: " + granularity + "\n"
+    infoText += "Language: " + language + "\n"
+    infoText += "Clone Origin: " + cloneOrigin + "\n"
+    with open(outputFilePath, "w") as f:
+        f.write(infoText)   
+        
+
 if __name__ == "__main__":
     # taskId = sys.argv[1]
     # detectionId = sys.argv[2]
@@ -110,11 +135,12 @@ if __name__ == "__main__":
     # graunlarity = sys.argv[4]
     # language = sys.argv[5]
     
-    taskId = "11010"
-    detectionId = "3"
+    taskId = "20021"
+    detectionId = "1"
     newDetectionId = "11"
-    granularity = "file"
-    language = "Java"
+    granularity = "function"
+    language = "C++"
+    cloneOrigin = "cross"
     
     tokenBagList = MSCCDTaskData.tokenBagListGeneration(taskId)
     fileList     = MSCCDTaskData.fileListGeneration(taskId)
@@ -132,9 +158,20 @@ if __name__ == "__main__":
     cloneList = MSCCDTaskData.cloneListGeneration(taskId, detectionId)
     newCloneList = []
     for clonePair in cloneList:
-        if not (not ifPathValid(fileList[clonePair[0][0]][clonePair[0][1]]) and not ifPathValid(fileList[clonePair[1][0]][clonePair[1][1]])):
-            if ifBagInDict(clonePair[0], filteredTokenBags) and ifBagInDict(clonePair[1], filteredTokenBags):
-                    newCloneList.append(clonePair)
+        originCheckFlag = False
+        if cloneOrigin == "all":
+            originCheckFlag = True
+        elif cloneOrigin == "cross":
+            if clonePair[0][0] != clonePair[1][0]:
+                originCheckFlag = True
+        elif cloneOrigin == "inner":
+            if clonePair[0][0] == clonePair[1][0]:
+                originCheckFlag = True
+        
+        if originCheckFlag:
+            if not (not ifPathValid(fileList[clonePair[0][0]][clonePair[0][1]]) and not ifPathValid(fileList[clonePair[1][0]][clonePair[1][1]])):
+                if ifBagInDict(clonePair[0], filteredTokenBags) and ifBagInDict(clonePair[1], filteredTokenBags):
+                        newCloneList.append(clonePair)
     
     newDetection = MSCCDTaskData.MSCCD_PATH + "/tasks/task" + taskId + "/detection" + newDetectionId
     if not os.path.exists(newDetection):
@@ -143,3 +180,4 @@ if __name__ == "__main__":
     with open(newResultFile,"w") as f:
         for newClone in newCloneList:
             f.write(ujson.dumps(newClone) + "\n")
+    generateInfoFile(newDetection, taskId, detectionId, granularity, language, cloneOrigin)
