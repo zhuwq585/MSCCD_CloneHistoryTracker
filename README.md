@@ -11,6 +11,7 @@
   + parser: the path of the folder where ANTLR grammars of the target language are
   + grammarName
   + startSymbol
++ generate calculator: **python3 calculatorGeneration.py**
 
 ### Step 2: start tracking
 
@@ -29,6 +30,7 @@
   + Java,Go: CTag
   + JavaScript, TypeScript: nodejs
   + C/C++: Clang
+  + Erlang,Lua,C#: Imcomplete
   
 ### Step 3: check results 
 
