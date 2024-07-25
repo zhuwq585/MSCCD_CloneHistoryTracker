@@ -1,4 +1,4 @@
-import os,sys, datetime
+import os,sys, datetime, ujson
 import time
 # git log -L:main:controller.py --no-patch
 
@@ -21,23 +21,34 @@ def mergeTwoCommitIdListByDateOrder(commitIdList1, commitIdList2):
 
 
 def getDefaultBranchName(projPath):
-    cmd = "cd " + projPath + "; git remote show origin"
-    res = os.popen(cmd).readlines()
-    for line in res:
-        if "HEAD branch" in line:
-            return line.split(":")[1].strip()
-    
-    return "master"
+    defaultBranchNameDictPath = "/Users/syu/workspace/MSCCD_CloneHistoryTracker/defaultBranchNameDict.json"
+    defaultBranchNameDict = ujson.loads(open(defaultBranchNameDictPath,"r").read())
+    if projPath in defaultBranchNameDict:
+        return defaultBranchNameDict[projPath]
+    else:
+        cmd = "cd " + projPath + "; git remote show origin"
+        res = os.popen(cmd).readlines()
+        for line in res:
+            if "HEAD branch" in line:
+                defaultBranchName = line.split(":")[1].strip()
+                defaultBranchNameDict[projPath] = defaultBranchName
+                open(defaultBranchNameDictPath,"w").write(ujson.dumps(defaultBranchNameDict))
+                return defaultBranchName
+        
+        return "master"
     
 
 def ifFileDifferenceInLineRange(diffHistoryObj1, diffHistoryObj2):
     # file1, startLine1, endLine1, file2, startLine2, endLine2
-    file1      = diffHistoryObj1['pathInCommit']
-    startLine1 = diffHistoryObj1['startLine']
-    endLine1   = diffHistoryObj1['endLine']
-    file2      = diffHistoryObj2['pathInCommit']
-    startLine2 = diffHistoryObj2['startLine']
-    endLine2   = diffHistoryObj2['endLine']
+    try:
+        file1      = diffHistoryObj1['pathInCommit']
+        startLine1 = diffHistoryObj1['startLine']
+        endLine1   = diffHistoryObj1['endLine']
+        file2      = diffHistoryObj2['pathInCommit']
+        startLine2 = diffHistoryObj2['startLine']
+        endLine2   = diffHistoryObj2['endLine']
+    except KeyError:
+        return None
     
     if startLine1 < 0 and startLine2 < 0:
         return None
@@ -74,7 +85,11 @@ def commitIdListFilterByFileDifferenceInLineRange(commitIdList, diffHistoryDict)
         cursor -= 1
     
     if len(res) == 0:
-        res.insert(0, commitIdList[-1])
+        try:
+            res.insert(0, commitIdList[-1])
+        except IndexError:
+            print("res.insert(0, commitIdList[-1])")
+            pass
         
     if len_before > len(res) and len(res) <= 1:
         print("Most file modification included commit was filtered out, please check if there are function renaming or file renaming in the commit history")
@@ -242,7 +257,7 @@ def copyTargetFileToFilder_fileLevel(projPath, filePath, projName, commitId, tar
 def switchToHeadCommit(projPath, defaultBranchName):    
     # switch the target repository to head commit 
     cmd = "cd " + projPath + "; git checkout -f " + defaultBranchName
-    os.popen(cmd).readlines()
+    res = os.popen(cmd).readlines()
     # print(res)
     
     

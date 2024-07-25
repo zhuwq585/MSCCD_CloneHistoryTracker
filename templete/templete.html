@@ -36,7 +36,7 @@
                 </div>
             </div>
             <div class="mMiddle">
-                <canvas id="vectorCanvas" height="200px" width="500px"></canvas>
+                <canvas id="vectorCanvas"  width="500px"></canvas>
             </div>
             
 
@@ -117,6 +117,10 @@
                             <span>Author: </span> {{simiItem.segment1.commitContent.author}}
                         </div>
                     </div>
+                    <div class="infoPanel">
+                        <span class="infoLine">Commit Text Messages: </span> <br>
+                        {{simiItem.segment1.commitComment}}
+                    </div>
                     <div class="code">
                         <pre><code class="language-{{report.language}}">{{simiItem.segment1.code}}</code></pre>
                     </div>
@@ -136,6 +140,10 @@
                             <span>Author: </span> {{simiItem.segment2.commitContent.author}}
                         </div>
                     </div>
+                    <div class="infoPanel">
+                        <span class="infoLine">Commit Text Messages: </span> <br>
+                        {{simiItem.segment2.commitComment}}
+                    </div>
                     <div class="code">
                         <pre><code class="language-{{report.language}}">{{simiItem.segment2.code}}</code></pre>
                     </div>
@@ -151,7 +159,9 @@
 <!-- and it's easy to individually load additional languages -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/languages/go.min.js"></script>
 <script>
-    hljs.highlightAll();</script>
+    hljs.highlightAll({
+        languages: ["C","C++","Java","Python","Go","Erlang","Lua","CSharp","TypeScript"]
+    });</script>
 
     
     <script>
@@ -164,7 +174,7 @@
 
 
 
-        const canvasHeight = canvas.height;
+        // const canvasHeight = canvas.height;  
         const canvasWidth = canvas.width;
 
         // configuration
@@ -184,11 +194,17 @@
         const X2 = X1 + gap_line;
         //const gap_size_point = 20
         const gap_num_line = DVGData.points.length  + 1
-        const gap_size_point = Math.floor((canvasHeight - margin_top) / gap_num_line)
+//        const gap_size_point = Math.floor((canvasHeight - margin_top) / gap_num_line)
+        const gap_size_point = 30
+
         const length_line = gap_num_line * gap_size_point
         //const gap_line = 200
   
-        
+        let canvasHeight = (DVGData.links.length + 1) * gap_size_point + margin_top * 2 
+        if (canvasHeight < 200){
+            canvasHeight = 200
+        }
+        document.getElementById("vectorCanvas").setAttribute("height",canvasHeight + "px");
 
 
         ctx.fillText("segment1", X1 - 25, margin_top - 5);
@@ -263,7 +279,7 @@
 
             const y = (DVGData.points[linkArr[0]].y + DVGData.points[linkArr[1]].y) / 2
             const x = margin_left_right + lineWidth + gap_line / 2
-            ctx.fillText(parseFloat(linkArr[2]).toFixed(2), x, y); 
+            ctx.fillText(parseFloat(linkArr[2]).toFixed(2) + " - " + parseFloat(linkArr[3]).toFixed(2), x, y); 
             //ctx.moveTo(similarityLine_startX, y);
             //ctx.lineTo(similarityLine_startX + linkArr[2] * similarityLine.toFixed(2), y);
 
@@ -273,7 +289,7 @@
 
 
         ctx.fillText("new", 0, 10);
-        ctx.fillText("old", 0, canvasHeight);
+        ctx.fillText("old", 0, canvasHeight - 10);
 
 
 

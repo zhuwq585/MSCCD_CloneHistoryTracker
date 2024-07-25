@@ -74,5 +74,5 @@ def tokenBagListGeneration(taskId):
     return res
 
 def getConfigObj(taskId):
-    configPath = MSCCD_PATH + "/tasks/task" + str(taskId) + "/config.json"
-    return ujson.loads(open(configPath,"r").read())
+    configPath = MSCCD_PATH + "/tasks/task" + str(taskId) + "/taskData.obj"
+    return ujson.loads(open(configPath,"r").read())['configObj']

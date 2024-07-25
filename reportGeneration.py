@@ -33,7 +33,8 @@ def generateJSONForDVG( commitList, similarityList):
         for pointIndex in range(len(res['points'])):
             if res['points'][pointIndex]['commitId'] == simiItem['segment1']['commitId'] or res['points'][pointIndex]['commitId'] == simiItem['segment2']['commitId']:
                 linkItem.append(pointIndex)
-        linkItem.append(simiItem['similarity'][0])
+        linkItem.append( str(simiItem['similarity'][0]))
+        linkItem.append(str(simiItem['similarity'][1]))
         res['links'].append(linkItem)
 
             
@@ -45,13 +46,19 @@ if __name__ == "__main__":
     taskId      = sys.argv[1]
     detectionId = sys.argv[2]
     cloneIndex  = sys.argv[3]
+    cloneRegion = sys.argv[4] # file or func
     
-    # taskId      = "11011"
-    # detectionId = "10"
-    # cloneIndex  = "31"
+    # taskId      = "20005"
+    # detectionId = "11"
+    # cloneIndex  = "2"
+    # cloneRegion = "func"
     
-    trackerResultSource = CLONETRACKER_PATH + "reports/" + taskId + "-" + detectionId + "/" + cloneIndex + "/result.json"
-    outputFile = CLONETRACKER_PATH + "reports/" + taskId + "-" + detectionId + "/" + cloneIndex + "/report.html"
+    
+    if not cloneRegion in {"file","func"}:
+        print("Invalid cloneRegion")
+        sys.exit(1)
+    trackerResultSource = CLONETRACKER_PATH + "reports/" + taskId + "-" + detectionId + "_" + cloneRegion + "/" + cloneIndex + "/result.json"
+    outputFile = CLONETRACKER_PATH + "reports/" + taskId + "-" + detectionId + "_" + cloneRegion + "/" + cloneIndex + "/report.html"
     trackerResult = ujson.loads(open(trackerResultSource,"r").read())
     
     if "functionName" in trackerResult["targetPair"]['segment1']:
@@ -119,7 +126,10 @@ if __name__ == "__main__":
         }
         
         simiItem_output['segment1']['code'] = "".join(getFileContent(simiItem_input['segment1']['commitContent']['pathInCommit'], simiItem_input['segment1']['commitContent']['startLine'], simiItem_input['segment1']['commitContent']['endLine']))
+        simiItem_output['segment1']['commitComment'] = " ".join(simiItem_input['segment1']['commitContent']['Content'])
         simiItem_output['segment2']['code'] = "".join(getFileContent(simiItem_input['segment2']['commitContent']['pathInCommit'], simiItem_input['segment2']['commitContent']['startLine'], simiItem_input['segment2']['commitContent']['endLine']))
+        simiItem_output['segment2']['commitComment'] = " ".join(simiItem_input['segment2']['commitContent']['Content'])
+        
         
         if simiItem_input_index > 0:   # show diff content
         
@@ -130,6 +140,8 @@ if __name__ == "__main__":
         
     result['DVGData'] = generateJSONForDVG(trackerResult['commitList'], trackerResult['similarityList'])
     
+    if result['language'] == "CPP14":
+        result['language'] = "C++"
         
     env = Environment(loader=FileSystemLoader('./'))
     template = env.get_template('templete/templete.html')

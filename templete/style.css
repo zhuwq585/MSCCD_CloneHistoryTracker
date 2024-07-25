@@ -7,6 +7,7 @@
     width: 49%;
     display: inline-block;
     vertical-align: top;
+    position: relative;
 }
 .left{
     border-right: 3px solid #ccc;
@@ -18,6 +19,7 @@
 #vectorCanvas{
     margin: 0 auto;
     /* min-width: 300px; */
+    /* min-height: 400px; */
 }
 
 .mleft, .mright {
@@ -33,7 +35,7 @@
     margin: 0 auto;
 }
 .mright{
-    text-align: right;
+    text-align: left;
 }
 #segmentInfo{
     border: 3px solid #ccc;
@@ -43,10 +45,17 @@
 #segmentInfo .infoLine{
     overflow: overlay;
 }
-
-#segmentInfo .infoLine span{
-    line-height: 30px;
+.infoLine span, span.infoLine{
+    display: inline-block;
+    width: 200px;
+    line-height: 20px;
+    font-weight: bold;
     /* text-overflow: ellipsis; */
+}
+
+#segmentInfo .mMiddle{
+    max-height: 400px;
+    overflow: scroll;
 }
 
 #main{
@@ -57,11 +66,7 @@
     text-align: center;
 }
 
-pre{
-    /* white-space: pre-wrap;
-    word-wrap: break-word; */
-    text-align: left;
-}
+
 
 .similarity{
     text-align: center;
@@ -87,6 +92,17 @@ pre{
 }
 
 pre{
-    max-height: 800px;
+        /* white-space: pre-wrap;
+    word-wrap: break-word; */
+    max-height: 200px;
     overflow: scroll;
+    text-align: left;
+    /* position: relative;
+
+    counter-reset: line-numbering; */
+
+}
+
+.infoPanel span{
+    font-weight: bold;
 }

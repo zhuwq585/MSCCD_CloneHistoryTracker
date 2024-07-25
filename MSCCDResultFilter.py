@@ -15,7 +15,7 @@
 import MSCCDTaskData
 import FuncIdentification
 import ujson, sys, os
-
+from STMDriverPathMatcher import ifNotSameSTMDriver
 
 
 def funcExtractor(language):
@@ -23,7 +23,7 @@ def funcExtractor(language):
     
 
     language     = language
-    notationLine_max = 2
+    notationLine_max = 3
     
     
     for projectId in range(len(tokenBagList)):
@@ -44,9 +44,9 @@ def funcExtractor(language):
                 for tokenBag in tokenBagList[projectId][fileId]:
                     notationLine = 0
                     while notationLine <= notationLine_max:
-                        if tokenBag['startLine'] - notationLine in allFuncs:
-                            if tokenBag['endLine'] in allFuncs[tokenBag['startLine'] - notationLine]:
-                                res.append((tokenBag, allFuncs[tokenBag['startLine'] - notationLine][tokenBag['endLine']]["name"]))
+                        if tokenBag['startLine'] + notationLine in allFuncs:
+                            if tokenBag['endLine'] in allFuncs[tokenBag['startLine'] + notationLine]:
+                                res.append((tokenBag, allFuncs[tokenBag['startLine'] + notationLine][tokenBag['endLine']]["name"]))
                                 break
                         notationLine += 1
                 
@@ -83,8 +83,9 @@ def tokenBagList2Dict(tokenBagList):
 def functionNameFilter(tokenBagList): 
     res = []
     
-    filteredFunctionNameList = ["equals", "hashCode", "Reset", "ProtoReflect"]
-    
+    # filteredFunctionNameList = ["equals", "hashCode", "Reset", "ProtoReflect"]
+
+    filteredFunctionNameList = []    
     for tokenBagItem in tokenBagList:
         if tokenBagItem[1] not in filteredFunctionNameList:
             res.append(tokenBagItem[0])
@@ -135,29 +136,32 @@ if __name__ == "__main__":
     # graunlarity = sys.argv[4]
     # language = sys.argv[5]
     
-    taskId = "20021"
+    taskId = "20008"
     detectionId = "1"
-    newDetectionId = "11"
-    granularity = "function"
-    language = "C++"
+    newDetectionId = "12"
+    granularity = "func"
+    language = "Go"
     cloneOrigin = "cross"
+    
+    NOTATION_LINE = 2
     
     tokenBagList = MSCCDTaskData.tokenBagListGeneration(taskId)
     fileList     = MSCCDTaskData.fileListGeneration(taskId)
     
     if granularity == "file":
-        filteredTokenBags = tokenBagList2Dict(tokenNumFilter(file_level_bag_Extractor(), 50))
-    elif granularity == "function":
+        filteredTokenBags = tokenBagList2Dict(tokenNumFilter(file_level_bag_Extractor(), 30))
+    elif granularity == "func":
         filteredTokenBags = tokenBagList2Dict(functionNameFilter(funcExtractor(language)))
     else:
         print("granularity error")
         sys.exit()
     
     
-    
+        
     cloneList = MSCCDTaskData.cloneListGeneration(taskId, detectionId)
     newCloneList = []
-    for clonePair in cloneList:
+    for cloneIndex in range(len(cloneList)):
+        clonePair = cloneList[cloneIndex]
         originCheckFlag = False
         if cloneOrigin == "all":
             originCheckFlag = True
@@ -169,8 +173,13 @@ if __name__ == "__main__":
                 originCheckFlag = True
         
         if originCheckFlag:
+            
+            if not ifNotSameSTMDriver(fileList[clonePair[0][0]][clonePair[0][1]], fileList[clonePair[1][0]][clonePair[1][1]]):
+                continue
+            
             if not (not ifPathValid(fileList[clonePair[0][0]][clonePair[0][1]]) and not ifPathValid(fileList[clonePair[1][0]][clonePair[1][1]])):
                 if ifBagInDict(clonePair[0], filteredTokenBags) and ifBagInDict(clonePair[1], filteredTokenBags):
+
                         newCloneList.append(clonePair)
     
     newDetection = MSCCDTaskData.MSCCD_PATH + "/tasks/task" + taskId + "/detection" + newDetectionId

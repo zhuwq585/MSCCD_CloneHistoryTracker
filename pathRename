@@ -1,0 +1,25 @@
+import os
+import json
+
+def replace_string_in_file(file_path, old_string, new_string):
+    with open(file_path, 'r+', encoding='utf-8') as file:
+        content = file.read()
+        content = content.replace(old_string, new_string)
+        file.seek(0)
+        file.write(content)
+        file.truncate()
+
+def find_and_replace_in_files(directory, old_string, new_string):
+    for root, dirs, files in os.walk(directory):
+        for file in files:
+            if file.endswith("result.json"):
+                file_path = os.path.join(root, file)
+                replace_string_in_file(file_path, old_string, new_string)
+                print(f"Updated {file_path}")
+
+# Replace the placeholders with your actual data
+folder_path = input("Enter the folder path: ")
+old_str = "20005-11\\/"
+new_str = "20005-11_func\\/"
+
+find_and_replace_in_files(folder_path, old_str, new_str)

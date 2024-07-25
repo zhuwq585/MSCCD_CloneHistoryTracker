@@ -35,28 +35,197 @@
 FunctionItemNameSet = {'method','function',"func"}
 LLVM_PATH = "/opt/homebrew/opt/llvm/lib"
 NOTATION_LINE = 3
+MIN_FUNCTIONLINES = 3
 MACRO_LIST = ["define", "ifdef", "ifndef", "endif", "undef", "if", "else", "elif", "include"]
+IF_MANUAL_CHECK = False
 
 ####
 
-import os,ujson
+import os,ujson, sys
 os.environ['LD_LIBRARY_PATH'] = LLVM_PATH
+sys.path.append("/Users/syu/workspace/MSCCD_CloneHistoryTracker/ErLangFuncExtract")
+sys.path.append("/Users/syu/workspace/MSCCD_CloneHistoryTracker/LuaFuncExtract")
 import clang.cindex
 import re
+import ast
+from PyFuncVisitor import FuncVisitor
+from redbaron import RedBaron
 import chardet
+# from LuaFuncExtract.main import main as luaMain
+# from ErLangFuncExtract.main import main as erlangMain
+
+
 clang.cindex.Config.set_library_path(LLVM_PATH)
 
 
 
 
 def getAllFunctionItems(path, language):
-    if language in {"Java", "Go"}:
+    if language in {"Java", "Go", "CSharp", "C#"}:
         return getAllFunctionItems_CTag(path, language)
-    elif language == "JavaScript":
-        return getAllFunctionItems_JavaScript(path)
+    elif language in {"JavaScript","TypeScript"}:
+        return getAllFunctionItems_EcmaScript(path, language)
     elif language in { "C++", "C"}:
         return getAllFunctionItems_Cpp(path)
+    elif language == "Python":
+        return getAllFunctionItems_Py(path)
+    elif language == "C#" or language == "CSharp":
+        return getAllFunctionItems_CS(path)
+    elif language == "ErLang" or language == "Erlang":
+        return getAllFunctionItems_ER(path)
+    elif language == "Lua":
+        return getAllFunctionItems_Lua(path)
+
+
+def getAllFunctionItems_Lua(path):
+    if os.path.exists(path):
+        res = {}
+        # cmd = "python3 /Users/syu/workspace/MSCCD_CloneHistoryTracker/LuaFuncExtract/main.py " + path
+        # luaFuncItemsSources = os.popen(cmd).readlines()
+        luaFuncItemsSources = luaMain(path)
+        for line in luaFuncItemsSources:
+            try:
+                luaFuncItem = ujson.loads(line)
+            except Exception:
+                print(path)
+                print(line)
+                print("->####Error")
+                continue
+            
+            ptn = ""
+            if 'param' in luaFuncItem:
+                for param in luaFuncItem['params']:
+                    ptn += param['type'] + "@@"
+            if len(ptn) == 0:
+                ptn = "--"
+            
+            res[luaFuncItem['startLine']] = {
+                luaFuncItem['endLine'] : {
+                "name" : luaFuncItem['name'],
+                "startLine" : luaFuncItem['startLine'],
+                "endLine" : luaFuncItem['endLine'],
+                "pattern" : ptn
+                }
+            }
+        return res
+    else:
+        print("Error(getAllFunctionItems): file not found: " + path)
+        return None
+
+def getAllFunctionItems_ER(path):
+    if os.path.exists(path):
+        res = {}
+        # cmd = "python3 /Users/syu/workspace/MSCCD_CloneHistoryTracker/ErLangFuncExtract/main.py " + path
+        # erFuncItemsSources = os.popen(cmd).readlines()
+        erFuncItemsSources = erlangMain(path)
+        for line in erFuncItemsSources:
+            try:
+                erFuncItem = ujson.loads(line)
+            except Exception:
+                print(path)
+                print(line)
+                print("->####Error")
+                continue
+            
+            ptn = ""
+            if 'param' in erFuncItem:
+                for param in erFuncItem['params']:
+                    ptn += param['type'] + "@@"
+            if len(ptn) == 0:
+                ptn = "--"
+            
+            res[erFuncItem['startLine']] = {
+                erFuncItem['endLine'] : {
+                "name" : erFuncItem['name'],
+                "startLine" : erFuncItem['startLine'],
+                "endLine" : erFuncItem['endLine'],
+                "pattern" : ptn
+                }
+            }
+        return res
+    else:
+        print("Error(getAllFunctionItems): file not found: " + path)
+        return None
+
+def getAllFunctionItems_CS(path):
+    if os.path.exists(path):
+        res = {}
+        cmd = "./CSFunctionExtraction.sh " + path
+        csFuncItemsSources = os.popen(cmd).readlines()
+        for line in csFuncItemsSources:
+            try:
+                csFuncItem = ujson.loads(line)
+            except Exception:
+                print(path)
+                print(line)
+                print("->####Error")
+                continue
+            
+            ptn = ""
+            if 'param' in csFuncItem:
+                for param in csFuncItem['paramss']:
+                    ptn += param['type'] + "@@"
+                
+            if len(ptn) == 0:
+                ptn = "--"
+
+                
+            res[csFuncItem['startLine']] = {
+                csFuncItem['endLine'] : {
+                "name" : csFuncItem['name'],
+                "startLine" : csFuncItem['startLine'],
+                "endLine" : csFuncItem['endLine'],
+                "pattern" : ptn
+                }
+            }
+        
+        return res
+    else:
+        print("Error(getAllFunctionItems): file not found: " + path)
+        return None 
     
+    
+def getAllFunctionItems_Py(path):
+    if os.path.exists(path):
+        res = {}
+        
+        try:
+        ### By using ast
+            tree = ast.parse(open(path,"r").read())
+            ast.increment_lineno(tree, n=0)
+            visitor = FuncVisitor()
+            visitor.visit(tree)
+            
+            for detectedFuncItem in visitor.detectedFunc:
+                res[detectedFuncItem['startLine']] = {
+                    detectedFuncItem['endLine'] : detectedFuncItem
+                }
+            return res
+        except Exception:
+
+            print("Failed by using ast")
+        ### By using redbaron
+            try:
+                red = RedBaron(open(path,"r").read())
+                for function_node in red.find_all('def'):
+                    startLine = function_node.absolute_bounding_box.top_left.line
+                    endLine = function_node.absolute_bounding_box.bottom_right.line
+                    functionName = function_node.name
+                    res[startLine] = {
+                        endLine: {
+                            "name": functionName,
+                            "startLine" : startLine,
+                            "endLine" : endLine
+                        }
+                    }
+                print("successed:" + path)
+                return res
+            except Exception:
+                print("failed by using redbaron")
+                return None
+    else:
+        print("Error(getAllFunctionItems): file not found: " + path)
+        return None 
     
 def getAllFunctionItems_CTag(path, language):
     res = {}
@@ -82,20 +251,34 @@ def getAllFunctionItems_CTag(path, language):
         return res
     else:
         print("Error(getAllFunctionItems): file not found: " + path)
-        return None
+        return []
 
 
-def getAllFunctionItems_JavaScript(path):
+def getAllFunctionItems_EcmaScript(path, language):
+    # print("#####")
+    # print(path)
+    # print("####")
     res = {}
-    cmd = "node JSFunctionExtraction.js " + path
+    if language == "JavaScript":
+        cmd = "node JSFunctionExtraction.js " + path
+    elif language == "TypeScript":
+        cmd = "node TSFunctionExtraction.js " + path
+        
     jsFuncItemsSources = os.popen(cmd).readlines()
-    
     for line in jsFuncItemsSources:
-        jsFuncItem = ujson.loads(line)
+        try:
+            jsFuncItem = ujson.loads(line)
+        except Exception:
+            print(path)
+            print(line)
+            print("####")
+            continue
         
         ptn = ""
-        for param in jsFuncItem['params']:
-            ptn += param['type'] + "@@"
+        if 'param' in jsFuncItem:
+            for param in jsFuncItem['params']:
+                ptn += param['type'] + "@@"
+            
         if len(ptn) == 0:
             ptn = "--"
 
@@ -170,13 +353,45 @@ def JavaPatternGeneration(str):
     return res
 
 def getFunctionName_Ptn(path, startLine, endLine, language):
-    if language in {"Java", "Go"}:
+    if language in {"Java", "Go", "CSharp", "C#"}:
         return getFunctionName_Ptn_CTAG(path, startLine, endLine, language)
-    elif language == "JavaScript":
-        return getFunctionName_Ptn_JavaScript(path, startLine, endLine)
+    elif language in {"JavaScript","TypeScript"}:
+        return getFunctionName_Ptn_EcmaScript(path, startLine, endLine,language)
     elif language in {"C++", "C"}:
         return getFunctionName_Ptn_Cpp(path, startLine, endLine)
+    elif language == "Python":
+        return getFunctionName_Ptn_Py(path, startLine, endLine)
+    elif language == "C#" or language == "CSharp":
+        return getFunctionName_Ptn_CS(path,startLine,endLine)
+    elif language in {"ErLang", "Erlang","Lua"}:
+        return getFunctionName_Ptn_ANTLRParser(path, startLine, endLine, language)
 
+def getFunctionName_Ptn_ANTLRParser(path, startLine, endLine, language):
+    if language == "ErLang" or language == "Erlang":
+        funcItems = getAllFunctionItems_ER(path)
+    elif language == "Lua":
+        funcItems = getAllFunctionItems_Lua(path)
+    
+    for startLineDetected in funcItems:
+        for endLineDetected in funcItems[startLineDetected]:
+            if (startLineDetected <= startLine+NOTATION_LINE and startLineDetected >= startLine-NOTATION_LINE )and (endLineDetected <= endLine + NOTATION_LINE and endLineDetected >= endLine - NOTATION_LINE):
+                return funcItems[startLineDetected][endLineDetected]['name'], funcItems[startLineDetected][endLineDetected]['pattern']
+            
+def getFunctionName_Ptn_CS(path, startLine, endLine):
+    funcItems = getAllFunctionItems_CS(path)
+    for startLineDetected in funcItems:
+        for endLineDetected in funcItems[startLineDetected]:
+            if (startLineDetected <= startLine+NOTATION_LINE and startLineDetected >= startLine-NOTATION_LINE )and (endLineDetected <= endLine + NOTATION_LINE and endLineDetected >= endLine - NOTATION_LINE):
+                return funcItems[startLineDetected][endLineDetected]['name'], funcItems[startLineDetected][endLineDetected]['pattern']
+    
+
+def getFunctionName_Ptn_Py(path, startLine, endLine):
+    funcItems = getAllFunctionItems_Py(path)
+    if startLine in funcItems:
+        if endLine in funcItems[startLine]:
+            return funcItems[startLine][endLine]['name'], "py"
+    
+    return None
 
 def getFunctionName_Ptn_Cpp(path, startLine, endLine):
     removeMacro_Cpp(path)
@@ -185,37 +400,29 @@ def getFunctionName_Ptn_Cpp(path, startLine, endLine):
         index = clang.cindex.Index.create()
         translation_unit = index.parse(path)
         for cursor in translation_unit.cursor.walk_preorder():
-            if cursor.extent.start.line == startLine and cursor.extent.end.line == endLine and (cursor.kind == clang.cindex.CursorKind.CXX_METHOD or cursor.kind == clang.cindex.CursorKind.FUNCTION_DECL):
+            if (cursor.extent.start.line <= startLine+NOTATION_LINE and cursor.extent.start.line >= startLine-NOTATION_LINE )and (cursor.extent.end.line <= endLine + NOTATION_LINE and cursor.extent.end.line >= endLine - NOTATION_LINE) and (cursor.kind == clang.cindex.CursorKind.CXX_METHOD or cursor.kind == clang.cindex.CursorKind.FUNCTION_DECL):
                 
                 file_path_cursor = cursor.extent.start.file.name
                 if file_path_cursor != path:
                     continue
                 function_name = cursor.spelling
                 
-                # previous version
-                # function_params_type = [p.type.spelling for p in cursor.get_arguments()]
-                
-                # if cursor.semantic_parent.kind == clang.cindex.CursorKind.CLASS_DECL:
-                #     class_name = cursor.semantic_parent.displayname
-                # else:
-                #     class_name = "@NONE@"
-                
-                # pattern = class_name + "@@" + "::".join(function_params_type)
-                
-                # new version
                 
                 pattern = cursor.type.spelling
                 recoverMacro_Cpp(path)
                 return function_name, pattern
         
         # function not found
-        print("### Cannot find function in file: " + path)
-        print("Start line: " + str(startLine) + " End line: " + str(endLine))
-        if input("Function not found in the newest commit, maybe in the macro. Do you want to manully check code base and input line number? (y/n)") != "n":
-            function_name = input("Function Name: ")
-            pattern = input("Pattern Line: ")
-            recoverMacro_Cpp(path)
-            return function_name, pattern
+        if IF_MANUAL_CHECK:
+            print("### Cannot find function in file: " + path)
+            print("Start line: " + str(startLine) + " End line: " + str(endLine))
+            if input("Function not found in the newest commit, maybe in the macro. Do you want to manully check code base and input line number? (y/n)") != "n":
+                function_name = input("Function Name: ")
+                pattern = input("Pattern Line: ")
+                recoverMacro_Cpp(path)
+                return function_name, pattern
+        else:
+            return None, None
     except Exception:
         recoverMacro_Cpp(path)
         print("Error(getFunctionName_Ptn): " + path)
@@ -229,20 +436,26 @@ def getFunctionName_Ptn_CTAG(path, startLine, endLine, language):
     res = os.popen(cmd).readlines()
     for ctagItemLine in res:
         ctagItem = ujson.loads(ctagItemLine)
-        if ((ctagItem['line'] <= startLine) and (ctagItem['line'] >= startLine  - NOTATION_LINE)) and ctagItem['end'] == endLine and ctagItem['kind'] in FunctionItemNameSet:
-            
-            # if language == "Java":
-            #     return ctagItem['name'],JavaPatternGeneration(ctagItem['pattern'])
-            
-            return ctagItem['name'], ctagItem['pattern']
+        try:
+            if ((ctagItem['line'] <= startLine) or (ctagItem['line'] >= startLine  - NOTATION_LINE)) and ctagItem['end'] == endLine and ctagItem['kind'] in FunctionItemNameSet:
+                
+                # if language == "Java":
+                #     return ctagItem['name'],JavaPatternGeneration(ctagItem['pattern'])
+                
+                return ctagItem['name'], ctagItem['pattern']
+        except KeyError:
+            continue
         
     return None
 
 
 
-def getFunctionName_Ptn_JavaScript(path, startLine, endLine):
+def getFunctionName_Ptn_EcmaScript(path, startLine, endLine, language):
     # node JSFunctionExtraction.js path
-    cmd = "node JSFunctionExtraction.js " + path
+    if language == "JavaScript":
+        cmd = "node JSFunctionExtraction.js " + path
+    elif language == "TypeScript":
+        cmd = "node TSFunctionExtraction.js " + path
     jsFuncItemsSources = os.popen(cmd).readlines()
     
     for line in jsFuncItemsSources:
@@ -263,14 +476,18 @@ def getFunctionName_Ptn_JavaScript(path, startLine, endLine):
 
 # get function position in the file by function name and pattern
 
-def getFunctionPosition_JavaScript(path, functionName, patternString):
-    cmd = "node JSFunctionExtraction.js " + path
+def getFunctionPosition_EcmaScript(path, functionName, patternString, language):
+    if language == "JavaScript":
+        cmd = "node JSFunctionExtraction.js " + path
+    elif language == "TypeScript":
+        cmd = "node TSFunctionExtraction.js " + path
     # if not os.path.exists(path):
     #     # wait 1 second and try again
     #     time.sleep(1)
     
     if os.path.exists(path):
         jsFuncItemsSource = os.popen(cmd).readlines()
+        matchedFuns = []
         for line in jsFuncItemsSource:
             jsFuncItem = ujson.loads(line)
             
@@ -280,18 +497,41 @@ def getFunctionPosition_JavaScript(path, functionName, patternString):
             if len(jsctagPtn) == 0:
                 jsctagPtn = "--"
             
-            if jsFuncItem['name'] == functionName and jsctagPtn == patternString:
-                return jsFuncItem['startLine'], jsFuncItem['endLine']
+            # if jsFuncItem['name'] == functionName and jsctagPtn == patternString:
+            if jsFuncItem['name'] == functionName:
+                matchedFuns.append((jsFuncItem['startLine'], jsFuncItem['endLine']))
         
-        print("Cannot find function: " + functionName + " in file: " + path)
-        if input("Do you want to continue to input line number manually? (y/n)") != "n":
-            startLine = input("Please input start line: ")
-            endLine = input("Please input end line: ")
-            return int(startLine), int(endLine)
-        return -1,-1
+        if len(matchedFuns) == 1:
+            return matchedFuns[0][0],matchedFuns[0][1]
+        elif len(matchedFuns) > 1:
+            print("Multiple target found:" + matchedFuns)
+            index = input("please input index of matched target:")
+            
+            if index < 0:
+                return -1,-1
+            else:
+                return matchedFuns[index][0],matchedFuns[index][1]
+        else:
+            print("Cannot find function: " + functionName + " in file: " + path)
+            if IF_MANUAL_CHECK:
+                # if input("Do you want to continue to input line number manually? (y/n)") != "n":
+                startLine = input("Please input start line: ")
+                endLine = input("Please input end line: ")
+                return int(startLine), int(endLine)
+            else:
+                return -1,-1
     else:
         print("Error(getFunctionPosition): file not found: " + path)
         return -1, -1
+
+def getFunctionPosition_Py(path, functionName):
+    detectedFuncs = getAllFunctionItems_Py(path)
+    for startLine in detectedFuncs:
+        for endLine in detectedFuncs[startLine]:
+            if detectedFuncs[startLine][endLine]['name'] == functionName:
+                return startLine, endLine
+    
+    return -1, -1
 
 
 def getFunctionPosition_CTag(path, functionName, patternString, language, functionIdendified):
@@ -321,26 +561,21 @@ def getFunctionPosition_CTag(path, functionName, patternString, language, functi
         
         print("### Cannot find function: " + functionName + " in file: " + path)
         if functionIdendified > 0:
-            if input("Function not found in a non-initial commit, maybe rename or retype. Do you want to manully check code base and input line number? (y/n)") != "n":
-                startLine = input("Please input start line: ")
-                endLine = input("Please input end line: ")
-                return int(startLine), int(endLine)
+            if IF_MANUAL_CHECK:
+                if input("Function not found in a non-initial commit, maybe rename or retype. Do you want to manully check code base and input line number? (y/n)") != "n":
+                    startLine = input("Please input start line: ")
+                    endLine = input("Please input end line: ")
+                    return int(startLine), int(endLine)
         return -1,-1    
     else:
         print("Error(getFunctionPosition): file not found: " + path)
-        return None
+        return -1,-1
 
-def getFunctionPosition_Cpp(path, functionName, patternString):
-    # if not os.path.exists(path):
-    #     # wait 1 second and try again
-    #     time.sleep(1)
-        
+def getFunctionPosition_Cpp(path, functionName, patternString):        
     if os.path.exists(path):
         # clang.cindex.Config.set_library_path("/opt/homebrew/opt/llvm/lib")
 
         removeMacro_Cpp(path)
-
-        
         index = clang.cindex.Index.create()
         
         try:
@@ -349,7 +584,7 @@ def getFunctionPosition_Cpp(path, functionName, patternString):
             recoverMacro_Cpp(path)
             print("Error(getFunctionPosition_Cpp) " + path)
             print(e)
-            return None
+            return -1,-1
         
         
         detectedFunction = []
@@ -366,7 +601,7 @@ def getFunctionPosition_Cpp(path, functionName, patternString):
                 
                 if function_name == functionName and pattern == patternString:
                     # recoverMacro_Cpp(path)
-                    detectedFunction.append(cursor.extent.start.line, cursor.extent.end.line)
+                    detectedFunction.append((cursor.extent.start.line, cursor.extent.end.line))
                     # return cursor.extent.start.line, cursor.extent.end.line
         
         recoverMacro_Cpp(path)
@@ -374,52 +609,191 @@ def getFunctionPosition_Cpp(path, functionName, patternString):
             return detectedFunction[0][0],detectedFunction[0][1]
         elif len(detectedFunction) > 1:
             # return -1, -1
-            print("Multiple function named " + function_name + " detected in lines: \n")
+            filteredFunction = []
             for item in detectedFunction:
-                print(str(item[0]) + "-" + str(item[1]))
-            startLine = input("Please input start line: ")
-            endLine = input("Please input end line: ")
-            return int(startLine), int(endLine)
+                if item[1] - item[0] >= MIN_FUNCTIONLINES:
+                    filteredFunction.append(item)
+            
+            if len(filteredFunction) == 1:
+                return filteredFunction[0][0],filteredFunction[0][1]
+            else:
+                if IF_MANUAL_CHECK:
+                    print("Multiple function named " + function_name + " detected in lines: \n")
+                    for item in detectedFunction:
+                        print(str(item[0]) + "-" + str(item[1]))
+                    startLine = input("Please input start line: ")
+                    endLine = input("Please input end line: ")
+                    return int(startLine), int(endLine)
+                else:
+                    return -1, -1
         else:
             ## function not found
             # return -1,-1
-            print("Cannot find function: " + functionName + " in file: " + path)
-            if input("Do you want to continue to input line number manually? (y/n)") != "n":
-                startLine = input("Please input start line: ")
-                # if startLine < 0:
-                #     return -1, -1 
-                endLine = input("Please input end line: ")
-                return int(startLine), int(endLine)
-            return -1,-1
+            if IF_MANUAL_CHECK:
+                print("Cannot find function: " + functionName + " in file: " + path)
+                if input("Do you want to continue to input line number manually? (y/n)") != "n":
+                    startLine = input("Please input start line: ")
+                    # if startLine < 0:
+                    #     return -1, -1 
+                    endLine = input("Please input end line: ")
+                    return int(startLine), int(endLine)
+                return -1,-1
+            else:
+                return -1,-1
     
     else:
         print("Error(getFunctionPosition): file not found: " + path)
-        return None
+        return -1,-1
+ 
+def getFunctionPosition_ANTLRParser(path, functionName, patternString, language):
+    if os.path.exists(path):
+        if language == "ErLang" or language == "Erlang":
+            allFunctionItemsInSource = getAllFunctionItems_ER(path)
+        elif language == "Lua":
+            allFunctionItemsInSource = getAllFunctionItems_Lua(path)
+        
+        matchedItems = []
+        for startLineDetected in allFunctionItemsInSource:
+            for endLineDetected in allFunctionItemsInSource[startLineDetected]:
+                if allFunctionItemsInSource[startLineDetected][endLineDetected]['name'] == functionName and allFunctionItemsInSource[startLineDetected][endLineDetected]['pattern'] == patternString:
+                    matchedItems.append(allFunctionItemsInSource[startLineDetected][endLineDetected])
+        
+        if len(matchedItems) == 1:
+            return matchedItems[0]['startLine'],matchedItems[0]['endLine']
+        elif len(matchedItems) > 1:
+            # return -1, -1
+            filteredFunction = []
+            for item in matchedItems:
+                if item[1] - item[0] >= MIN_FUNCTIONLINES:
+                    filteredFunction.append(item)
+            
+            if len(filteredFunction) == 1:
+                return filteredFunction[0][0],filteredFunction[0][1]
+            else:
+                if IF_MANUAL_CHECK:
+                    print("Multiple function named " + functionName + " detected in lines: \n")
+                    for item in matchedItems:
+                        print(str(item[0]) + "-" + str(item[1]))
+                    startLine = input("Please input start line: ")
+                    endLine = input("Please input end line: ")
+                    return int(startLine), int(endLine)
+                else:
+                    return -1, -1
+        else:
+            ## function not found
+            # return -1,-1
+            if IF_MANUAL_CHECK:
+                print("Cannot find function: " + functionName + " in file: " + path)
+                if input("Do you want to continue to input line number manually? (y/n)") != "n":
+                    startLine = input("Please input start line: ")
+                    # if startLine < 0:
+                    #     return -1, -1 
+                    endLine = input("Please input end line: ")
+                    return int(startLine), int(endLine)
+                return -1,-1
+            else:
+                return -1,-1
+    else:
+        print("Error(getFunctionPosition): file not found: " + path)
+        return -1,-1
     
-    
+   
+def getFunctionPosition_CS(path, functionName, patternString):
+    if os.path.exists(path):
+        allFunctionItemsInSource = getAllFunctionItems_CS(path)
+        
+        matchedItems = []
+        for startLineDetected in allFunctionItemsInSource:
+            for endLineDetected in allFunctionItemsInSource[startLineDetected]:
+                if allFunctionItemsInSource[startLineDetected][endLineDetected]['name'] == functionName and allFunctionItemsInSource[startLineDetected][endLineDetected]['pattern'] == patternString:
+                    matchedItems.append(allFunctionItemsInSource[startLineDetected][endLineDetected])
+        
+        
+        if len(matchedItems) == 1:
+            return matchedItems[0]['startLine'],matchedItems[0]['endLine']
+        elif len(matchedItems) > 1:
+            # return -1, -1
+            filteredFunction = []
+            for item in matchedItems:
+                if item[1] - item[0] >= MIN_FUNCTIONLINES:
+                    filteredFunction.append(item)
+            
+            if len(filteredFunction) == 1:
+                return filteredFunction[0][0],filteredFunction[0][1]
+            else:
+                if IF_MANUAL_CHECK:
+                    print("Multiple function named " + functionName + " detected in lines: \n")
+                    for item in matchedItems:
+                        print(str(item[0]) + "-" + str(item[1]))
+                    startLine = input("Please input start line: ")
+                    endLine = input("Please input end line: ")
+                    return int(startLine), int(endLine)
+                else:
+                    return -1, -1
+        else:
+            ## function not found
+            # return -1,-1
+            if IF_MANUAL_CHECK:
+                print("Cannot find function: " + functionName + " in file: " + path)
+                if input("Do you want to continue to input line number manually? (y/n)") != "n":
+                    startLine = input("Please input start line: ")
+                    # if startLine < 0:
+                    #     return -1, -1 
+                    endLine = input("Please input end line: ")
+                    return int(startLine), int(endLine)
+                return -1,-1
+            else:
+                return -1,-1
+        
+                
+
+    else:
+        print("Error(getFunctionPosition): file not found: " + path)
+        return -1,-1
     
 def getFunctionPosition(path, functionName, patternString, language, functionIdendified):
     # if language in {"Java", "Go", "C"}:
-    if language in {"Java", "Go"}:
+    if language in {"Java", "Go", "CSharp", "C#"}:
         return getFunctionPosition_CTag(path, functionName, patternString, language, functionIdendified)
     
-    elif language == "JavaScript":
-        return getFunctionPosition_JavaScript(path, functionName, patternString)
+    elif language in {"JavaScript","TypeScript"}:
+        return getFunctionPosition_EcmaScript(path, functionName, patternString,language)
     
     elif language in  {"C++","C"}:
         return getFunctionPosition_Cpp(path, functionName, patternString)
+    
+    elif language == "Python":
+        return getFunctionPosition_Py(path, functionName)
+    elif language == "C#" or language == "CSharp":
+        return getFunctionPosition_CS(path, functionName, patternString)
+    elif language in {"ErLang", "Erlang","Lua"}:
+        return getFunctionPosition_ANTLRParser(path, functionName, patternString, language)
 
 
 
 
 def removeMacro_Cpp(path):
     if os.path.exists(path):
+        # try:
+        #     sourceCodeContent = open(path, "r").read() 
+        # except Exception as e:
+        #     print("Error(removeMacro_Cpp): " + path)
+        #     print(e)
+        #     return None
         try:
-            sourceCodeContent = open(path, "r").read() 
-        except Exception as e:
-            print("Error(removeMacro_Cpp): " + path)
-            print(e)
-            return None
+            sourceCodeContent = open(path, "r").read()
+        except UnicodeDecodeError:
+            try:
+                with open(path, 'rb') as f:
+                    raw_data = f.read()
+                    encoding = chardet.detect(raw_data)['encoding']
+
+                with open(path, 'r', encoding=encoding) as f:
+                    sourceCodeContent = f.read()
+            except Exception as e:
+                print("Error(removeMacro_Cpp): " + path)
+                print(e)
+                sourceCodeContent = open(path, "r", errors='ignore').read()
         
         for macro in MACRO_LIST:
             regex = generate_regex_macroRomove(macro)
@@ -434,12 +808,28 @@ def removeMacro_Cpp(path):
 def recoverMacro_Cpp(path):
         
     if os.path.exists(path):
+        # try:
+        #     sourceCodeContent = open(path, "r").read() 
+        # except Exception as e:
+        #     print("Error(recoverMacro_Cpp): " + path)
+        #     print(e)
+        #     return None
+        
         try:
-            sourceCodeContent = open(path, "r").read() 
-        except Exception as e:
-            print("Error(recoverMacro_Cpp): " + path)
-            print(e)
-            return None
+            sourceCodeContent = open(path, "r").read()
+        except UnicodeDecodeError:
+            try:
+                with open(path, 'rb') as f:
+                    raw_data = f.read()
+                    encoding = chardet.detect(raw_data)['encoding']
+
+                with open(path, 'r', encoding=encoding) as f:
+                    sourceCodeContent = f.read()
+            except Exception as e:
+                print("Error(removeMacro_Cpp): " + path)
+                print(e)
+                sourceCodeContent = open(path, "r", errors='ignore').read()
+        
         
         for macro in MACRO_LIST:
             regex = generate_regex_macroRecovers(macro)
@@ -469,6 +859,9 @@ def generate_regex_macroRecovers(keyword):
 
 
 if __name__ == "__main__":
-    functons = getAllFunctionItems("/Users/syu/workspace/MSCCD_CloneHistoryTracker/reports/20021-11/685/AliOS-Things_md5_update/871b538decdbfc9c8ad9ba600b728ebfe8b1118f.c", "C++")
-    print(functons)
+    # functons = getAllFunctionItems("/Users/syu/workspace/MSCCD/scripts/MSCCDTaskData.py", "Python")
+    # functions = getFunctionPosition_EcmaScript("/Users/syu/workspace/MSCCD_CloneHistoryTracker/reports/20005-11/2/iotagent-ul_singleMeasure/b3e6334e68ba23d38a9ebf1e7f21a7627045e025.js", "singleMeasure","--","JavaScript")
+    
+    functions = getAllFunctionItems("/Users/syu/IoT_Projs/Erlang/dgiot/test/emqx_acl_cache_SUITE.erl","Erlang")
+    print(functions)
     pass

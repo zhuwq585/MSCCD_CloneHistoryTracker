@@ -7,3 +7,6 @@ __pycache__
 ChatGPT_archive/*
 __pycache__/*
 __pycache__
+tmp/*
+.env
+.alpackages/*

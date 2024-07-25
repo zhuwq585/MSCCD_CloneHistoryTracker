@@ -39,7 +39,8 @@ public class App
         TokenBag bag2 = pController.generateTokenBagByLinePosition(filePath2, startLine2, endLine2, k);
 
         Double overlapSimilarity = bag1.OverlapSimilarity(bag2);
-        Double LCSimilarity = bag1.LCSSimilarity(bag2);
+        // Double LCSimilarity = bag1.LCSSimilarity(bag2);
+        Double LCSimilarity = 0.0;
 
         System.out.println(String.valueOf(overlapSimilarity) + "," + String.valueOf(LCSimilarity));
 
