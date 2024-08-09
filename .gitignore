@@ -10,3 +10,6 @@ __pycache__
 tmp/*
 .env
 .alpackages/*
+./CSharpFuncExtract/*
+./ErlangFuncExtract/*
+./LuaFuncExtract/*

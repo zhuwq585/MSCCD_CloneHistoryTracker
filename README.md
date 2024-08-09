@@ -1,7 +1,5 @@
 # MSCCD_CloneHistoryTracker
 
-<!-- ![alt text](HTMLReport.png) -->
-
 
 ## How to use
 
@@ -15,11 +13,12 @@
 
 ### Step 2: start tracking
 
-+ We have two granularities
++ This tool support two granularities:
   + File level: controller_file.py
   + Function level: controller_func.py
+    +  We indentify the function as the same function in the past versions by function name and parameter list. So this tool can not track all the modification history when rename or parameter list modification exists. 
 + Configurations in the controller_**.py
-  + MSCCD_PATH: path to MSCCD
+  + MSCCD_PATH: path to MSCCD root folder
   + taskId, detectionId
   + cloneIndex: to configure which pair to track
     + x(x >= 0) : the clone index of target clone 
@@ -30,7 +29,6 @@
   + Java,Go: CTag
   + JavaScript, TypeScript: nodejs
   + C/C++: Clang
-  + Erlang,Lua,C#: Imcomplete
   
 ### Step 3: check results 
 
@@ -41,7 +39,7 @@
 
 
 
-## denpencies in pip
+## Dependency
 
 + jinja2
 + ujson 
